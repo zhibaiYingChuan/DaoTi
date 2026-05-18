@@ -1,40 +1,18 @@
 # Python
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
-*.egg-info/
-dist/
-build/
-
-# PyTorch
-*.pt
-*.pth
-*.ckpt
-*.safetensors
-*.sha256
-
-# Virtual Environment
-venv/
-.venv/
-env/
 
 # IDE
 .vscode/
 .idea/
-*.swp
-*.swo
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Jupyter
-.ipynb_checkpoints/
+# Training artifacts (excluded)
+*.pth
+*.ckpt
 
-# Logs
-*.log
-
-# Temporary files
-*.tmp
-*.temp
+# Note: yijing_v53_daoti.pt IS included (model weights for inference)
+# Note: yijing_v53_daoti.sha256 IS included (integrity check)

@@ -16,10 +16,14 @@
   "gua_embed_dim": 32,
   "moco_queue_size": 4096,
   "moco_momentum": 0.999,
-  "total_parameters": 5781155,
+  "total_parameters": 5059040,
   "parameter_count_approx": "5.06M",
-  "format": "safetensors",
+  "format": "state_dict",
   "license": "DaoTi Research License",
-  "weights_availability": "Separate authorization required. See LICENSE Section 2.2.",
-  "description": "Frozen DaoTi (道体) foundation model for I Ching divination and multi-domain text understanding. Research preview — model weights not included in public repository."
+  "weights_file": "yijing_v53_daoti.pt",
+  "sha256": "7a466cb35ba8d92e813419091b56c0787f1a0e8b9e5e92a5f866e4072483969d",
+  "inference_script": "inference.py",
+  "architecture_source": "Protected. Not included in this repository.",
+  "training_code": "Protected. Contact for access.",
+  "description": "Frozen DaoTi (道体) foundation model for I Ching divination. Model weights (.pt) + minimal inference script included. Architecture source code protected."
 }
