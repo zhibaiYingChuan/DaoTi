@@ -1,4 +1,4 @@
-# DaoTi V53 Foundation Model (道体基座)
+﻿# DaoTi V53 Foundation Model (道体基座)
 
 > **Research Preview — Reference Implementation Only**
 > 研究预览 — 仅含参考实现
@@ -187,7 +187,7 @@ model = load_v53_model("yijing_v53_foundation.safetensors")
 Model weights are protected under the DaoTi Research License and require separate authorization.
 
 ### For academic institutions in Chinese mainland (中国大陆学术机构):
-Submit an Academic Use Agreement to SmallLoong Research, including:
+Submit an Academic Use Agreement to 独立研究者，知白, including:
 - Institution name and accreditation
 - Research scope and expected duration
 - Responsible PI name and contact
@@ -260,7 +260,7 @@ daoti_v53_release/
 
 ```
 @software{daoti_v53_2026,
-  author = {SmallLoong Research},
+  author = {独立研究者，知白},
   title = {DaoTi V53 Foundation: A Gauge-Theoretic Frozen Foundation Model for I Ching Analysis},
   year = {2026},
   url = {https://github.com/zhibaiYingChuan/DaoTi}

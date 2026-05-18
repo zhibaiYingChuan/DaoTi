@@ -1,4 +1,4 @@
-"""
+﻿"""
 YiJing V53 Foundation Model — Research Preview / Reference Implementation
 ================================================================================
 A neural network model for I Ching (易经) divination and analysis,
@@ -7,7 +7,7 @@ featuring a dual-pathway architecture with symbolic reasoning and text understan
 IMPORTANT — READ THE LICENSE (LICENSE file) BEFORE USE:
   - This file (Reference Code) is publicly available under the DaoTi Research License.
   - Model Weights (safetensors, .pt, etc.) are NOT included in this repository.
-  - Model Weights require separate written authorization from SmallLoong Research.
+  - Model Weights require separate written authorization from 独立研究者，知白.
   - See LICENSE Section 2.2 for weight access procedures.
 
 Architecture Overview:
@@ -1030,7 +1030,7 @@ def load_v53_model(weights_path, config_path=None, device='cpu'):
     Load a V53 foundation model from safetensors weights.
     
     NOTE: Model Weights are NOT included in this public repository.
-    You must obtain weights through separate authorization from SmallLoong Research.
+    You must obtain weights through separate authorization from 独立研究者，知白.
     See LICENSE Section 2.2 for access procedures.
 
     Uses safetensors format (no pickle, no code execution risk).
