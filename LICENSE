@@ -63,6 +63,15 @@ This License governs the use, reproduction, and distribution of the DaoTi
     "学术用途" 指经认证的教育或研究机构为非商业研究、教学或学术发表目的而使用。
     商业实体的研究部门使用不构成学术用途。
 
+    For the avoidance of doubt, research conducted by a university laboratory
+    that receives funding from a commercial entity qualifies as Academic Use,
+    provided the research results are intended for scholarly publication and
+    the Model Weights are not transferred to the funding entity for its
+    independent use.
+
+    为避免疑义，接受商业实体资助的大学实验室所进行的研究属于学术用途，
+    前提是研究成果旨在学术发表，且模型权重未转让给资助实体供其独立使用。
+
 1.5 "Commercial Use" means any use that generates revenue or provides
     competitive advantage in a commercial context, including but not limited to:
     (a) integration into a product or service offered for sale or subscription;
@@ -75,6 +84,13 @@ This License governs the use, reproduction, and distribution of the DaoTi
     (b) 作为营利系统的组成部分使用；
     (c) 由营利性实体在其运营中使用；
     (d) 以模型推理即服务(MaaS)形式提供。
+
+1.6 "Redistribution" means making the Model Weights available for download,
+    access, or use by any third party, whether through a public repository,
+    private distribution channel, cloud API, or any other means.
+
+    "再分发" 指通过公开仓库、私密分发渠道、云端API或任何其他方式，
+    使模型权重可供任何第三方下载、访问或使用。
 
 
 2. TIERED LICENSE GRANT | 分层授权
@@ -96,7 +112,13 @@ This License governs the use, reproduction, and distribution of the DaoTi
     (iii) any derivative works of inference.py are distributed under
           this same License;
     (iv)  you do NOT reverse-engineer, decompile, or attempt to reconstruct
-          the Architecture Source Code from the Model Weights or inference.py.
+          the Architecture Source Code from the Model Weights or inference.py;
+    (v)   you do NOT sublicense, resell, or redistribute the Model Weights
+          (yijing_v53_daoti.pt) as a standalone product or as part of any
+          model distribution platform, repository, or marketplace without
+          prior written consent from 独立研究者，知白;
+    (vi)  any derivative model created through fine-tuning of yijing_v53_daoti.pt
+          shall also be distributed under this License.
 
     仓库资产 — 公共使用许可
 
@@ -110,7 +132,10 @@ This License governs the use, reproduction, and distribution of the DaoTi
     (ii)  明确标注原作者为 独立研究者，知白；
     (iii) inference.py 的衍生作品须依据本许可证分发；
     (iv)  不得从模型权重或 inference.py 中进行逆向工程、反编译或尝试重建
-          架构源码。
+          架构源码；
+    (v)   未经 独立研究者，知白 事先书面同意，不得将模型权重（yijing_v53_daoti.pt）
+          作为独立产品或任何模型分发平台、仓库、市场的一部分进行转授权、转售或再分发；
+    (vi)  任何基于 yijing_v53_daoti.pt 微调产生的衍生模型均须依据本许可证分发。
 
 2.2 ARCHITECTURE SOURCE CODE — CASE-BY-CASE AUTHORIZATION
 
