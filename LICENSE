@@ -1,0 +1,244 @@
+DAO TI RESEARCH LICENSE
+道体研究许可证
+
+Version 1.0, May 2026
+Copyright (c) 2026 SmallLoong Research (小陇研究)
+
+================================================================================
+IMPORTANT — READ CAREFULLY BEFORE USING, COPYING, OR DISTRIBUTING
+重要提示 — 在使用、复制或分发前请仔细阅读
+================================================================================
+
+This License governs the use, reproduction, and distribution of the DaoTi
+(道体) Foundation Model, comprising two categories of assets defined below.
+
+本许可证管辖道体基础模型的使用、复制和分发。该模型包含以下两类资产。
+
+
+1. DEFINITIONS | 定义
+--------------------------------------------------------------------------------
+
+1.1 "Reference Code" means the software source files defining the model
+    architecture, module interfaces, and data structures, including but not
+    limited to yijing_v53_model.py, verify_release.py, and yijing_v53_config.json.
+
+    "参考代码" 指定义模型架构、模块接口和数据结构的软件源文件，包括但不限于
+    yijing_v53_model.py、verify_release.py 和 yijing_v53_config.json。
+
+1.2 "Documentation" means the written materials describing the theoretical
+    foundations, training methodology, experimental results, and system design,
+    including but not limited to the Whitepaper and Papers directories.
+
+    "文档" 指描述理论基础、训练方法、实验结果和系统设计的书面材料，包括但不限于
+    白皮书和论文目录。
+
+1.3 "Model Weights" means the trained numerical parameters of the DaoTi
+    Foundation Model in any format (including but not limited to .safetensors,
+    .pt, .pth, .bin, .onnx), the SHA256 verification files associated with
+    them, and any derivative models created through fine-tuning, distillation,
+    or transfer learning based on the original weights.
+
+    "模型权重" 指道体基础模型在任何格式下的训练数值参数（包括但不限于
+    .safetensors、.pt、.pth、.bin、.onnx），以及与之关联的 SHA256 校验文件，
+    以及基于原始权重通过微调、蒸馏或迁移学习产生的任何衍生模型。
+
+1.4 "Academic Use" means use by an accredited educational or research
+    institution for non-commercial research, teaching, or scholarly publication.
+    Use by research divisions of commercial entities does not qualify as
+    Academic Use.
+
+    "学术用途" 指经认证的教育或研究机构为非商业研究、教学或学术发表目的而使用。
+    商业实体的研究部门使用不构成学术用途。
+
+1.5 "Commercial Use" means any use that generates revenue or provides
+    competitive advantage in a commercial context, including but not limited to:
+    (a) integration into a product or service offered for sale or subscription;
+    (b) use as a component of a revenue-generating system;
+    (c) use by a for-profit entity in its operations;
+    (d) provision of model inference as a service (MaaS).
+
+    "商业用途" 指在商业背景下产生收入或提供竞争优势的任何使用，包括但不限于：
+    (a) 集成至销售或订阅形式提供的产品或服务中；
+    (b) 作为营利系统的组成部分使用；
+    (c) 由营利性实体在其运营中使用；
+    (d) 以模型推理即服务(MaaS)形式提供。
+
+
+2. TIERED LICENSE GRANT | 分层授权
+--------------------------------------------------------------------------------
+
+2.1 REFERENCE CODE AND DOCUMENTATION — PUBLIC RESEARCH LICENSE
+
+    Subject to the terms of this License, you are granted a worldwide,
+    royalty-free, non-exclusive license to:
+    (a) use, reproduce, and distribute the Reference Code and Documentation;
+    (b) create derivative works of the Reference Code;
+    (c) publicly display and perform the Reference Code and Documentation;
+    provided that:
+    (i)   you retain all copyright, patent, trademark notices, and this
+          License in all copies;
+    (ii)  you clearly attribute SmallLoong Research as the original author;
+    (iii) any derivative works of the Reference Code are distributed under
+          this same License.
+
+    参考代码与文档 — 公共研究许可
+
+    依据本许可证条款，您被授予全球范围内、免版税、非独占的许可：
+    (a) 使用、复制和分发参考代码与文档；
+    (b) 基于参考代码创作衍生作品；
+    (c) 公开展示和执行参考代码与文档；
+    但须满足以下条件：
+    (i)   在所有副本中保留所有版权、专利、商标声明及本许可证；
+    (ii)  明确标注原作者为 SmallLoong Research；
+    (iii) 参考代码的衍生作品须依据本许可证分发。
+
+2.2 MODEL WEIGHTS — CASE-BY-CASE AUTHORIZATION
+
+    Model Weights are NOT covered by the public license grant in Section 2.1.
+    Model Weights are NOT included in the public repository.
+
+    Use of Model Weights requires a separate written authorization from
+    SmallLoong Research.
+
+    模型权重 — 逐案授权
+
+    模型权重不在第 2.1 条的公共许可范围内。
+    模型权重不包含在公开仓库中。
+
+    使用模型权重需要 SmallLoong Research 另行书面授权。
+
+    To request access | 获取授权：
+
+    (a) Academic institutions in the Chinese mainland (中国大陆学术机构):
+        Submit an Academic Use Agreement including institution name, research
+        scope, and responsible PI. Free of charge.
+        提交学术使用协议，包含机构名称、研究范围和负责人。免费。
+
+    (b) Commercial entities in the Chinese mainland (中国大陆商业实体):
+        Submit a Commercial License Application. Terms negotiated per use case.
+        提交商业许可申请。按使用场景谈判条款。
+
+    (c) Entities outside the Chinese mainland (中国大陆境外实体):
+        Submit a detailed proposal including use case, entity background,
+        and compliance declaration. Reviewed case-by-case.
+        提交详细方案，包含用途、实体背景和合规声明。逐案审核。
+
+
+3. EXPORT CONTROL AND GEOPOLITICAL RESTRICTIONS | 出口管制与地缘限制
+--------------------------------------------------------------------------------
+
+3.1 This License is subject to all applicable export control laws and
+    regulations of the People's Republic of China.
+
+    本许可证须遵守中华人民共和国所有适用的出口管制法律法规。
+
+3.2 Model Weights shall not be exported, re-exported, or transferred to:
+    (a) any entity or individual subject to technology transfer restrictions
+        under applicable Chinese law;
+    (b) any military, intelligence, or surveillance organization;
+    (c) any jurisdiction where such transfer is prohibited.
+
+    模型权重不得出口、再出口或转让至：
+    (a) 受适用中国法律技术转让限制的任何实体或个人；
+    (b) 任何军事、情报或监控组织；
+    (c) 禁止此类转让的任何司法管辖区。
+
+3.3 Any person or entity receiving Model Weights under a separate authorization
+    may NOT further distribute, sublicense, or transfer the Model Weights to
+    any third party without explicit written consent from SmallLoong Research.
+
+    任何依据另行授权获得模型权重的个人或实体，未经 SmallLoong Research 明确书面同意，
+    不得进一步分发、转授权或转让模型权重给任何第三方。
+
+
+4. INTELLECTUAL PROPERTY | 知识产权
+--------------------------------------------------------------------------------
+
+4.1 All title, ownership rights, and intellectual property rights in and to
+    the DaoTi Foundation Model (Reference Code, Documentation, and Model
+    Weights) shall remain with SmallLoong Research.
+
+    道体基础模型（参考代码、文档和模型权重）的全部所有权、产权和知识产权属于
+    SmallLoong Research。
+
+4.2 The DaoTi (道体) name, the TrigramSpace architecture, the Degenerate Ground
+    State theory, and the HeLuo Ladder Network design are original intellectual
+    property of SmallLoong Research. This License does not grant any trademark
+    rights.
+
+    道体(DaoTi)名称、三爻空间(TrigramSpace)架构、退化基态理论以及河洛阶梯网络
+    (HeLuo Ladder Network)设计是 SmallLoong Research 的原创知识产权。
+    本许可证不授予任何商标权利。
+
+
+5. PATENT NON-ASSERTION (FOR PUBLIC ASSETS ONLY) | 专利不主张（仅限公共资产）
+--------------------------------------------------------------------------------
+
+5.1 With respect to the Reference Code and Documentation only, SmallLoong
+    Research agrees not to assert any patent claims against licensees for
+    their use of the Reference Code in accordance with this License, provided
+    such use does not involve unauthorized access to Model Weights.
+
+    仅就参考代码与文档而言，SmallLoong Research 同意不对被许可方依据本许可证
+    使用参考代码的行为主张任何专利权利，前提是该使用不涉及未经授权的模型权重访问。
+
+5.2 This Section 5 does not apply to Model Weights.
+
+    本第 5 条不适用于模型权重。
+
+
+6. DISCLAIMER OF WARRANTY | 免责声明
+--------------------------------------------------------------------------------
+
+THE REFERENCE CODE AND DOCUMENTATION ARE PROVIDED "AS IS", WITHOUT WARRANTY
+OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+
+参考代码与文档按"原样"提供，不附带任何形式的明示或默示保证，包括但不限于对
+适销性、特定用途适用性和不侵权的保证。
+
+
+7. LIMITATION OF LIABILITY | 责任限制
+--------------------------------------------------------------------------------
+
+IN NO EVENT SHALL SMALLLOONG RESEARCH BE LIABLE FOR ANY CLAIM, DAMAGES, OR
+OTHER LIABILITY ARISING FROM THE USE OF THE REFERENCE CODE OR DOCUMENTATION.
+
+在任何情况下，SmallLoong Research 均不对因使用参考代码或文档而产生的任何索赔、
+损害或其他责任承担责任。
+
+
+8. GOVERNING LAW AND JURISDICTION | 管辖法律与司法管辖
+--------------------------------------------------------------------------------
+
+8.1 This License shall be governed by and construed in accordance with the
+    laws of the People's Republic of China.
+
+    本许可证受中华人民共和国法律管辖并据其解释。
+
+8.2 Any dispute arising from this License shall be subject to the exclusive
+    jurisdiction of the courts of the People's Republic of China.
+
+    因本许可证产生的任何争议应受中华人民共和国法院的专属管辖。
+
+8.3 In case of any discrepancy between the Chinese and English versions,
+    the Chinese version shall prevail.
+
+    中英文版本如有歧义，以中文版本为准。
+
+
+9. CONTACT | 联系方式
+--------------------------------------------------------------------------------
+
+For license inquiries and Model Weights access requests:
+许可咨询与模型权重获取请求：
+
+    SmallLoong Research (小陇研究)
+    联系人：知白
+    Email: spring60@vip.qq.com
+    Website: sfang.cc
+    Repository: https://github.com/zhibaiYingChuan/DaoTi
+
+================================================================================
+END OF LICENSE | 许可证结束
+================================================================================
