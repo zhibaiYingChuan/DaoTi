@@ -2,15 +2,15 @@
 
 > **算力不是门槛。结构性增效，而非规模堆积。**
 
-YiJing V53 Foundation (道体基座) is a pre-trained neural network **semantic foundation model**. It takes Chinese natural language text as input and outputs structured semantic representations — including semantic vectors in a high-dimensional encoding space, state vectors in the Luoshu representation space, and 64-dimensional structured prototype vectors in the trigram space.
+道体基座（DaoTi V53 Foundation）是一个预训练的神经网络**语义基座模型**。它以中文自然语言文本为输入，输出结构化语义表征——包括编码空间中的语义向量、洛书空间中的状态向量，以及64维结构化原型向量（卦象空间）。
 
-Built on the **Bilateral Ladder Network** architecture and pre-trained on general-purpose corpora and I Ching classical texts, the model's core parameters are frozen post-training (the "DaoTi" or "Dao Body"), serving as a stable foundation for all subsequent domain adaptation via lightweight adapters. This **frozen DaoTi + lightweight adapter** paradigm is grounded in the discovery of a **Degenerate Ground State** — a gauge-field-theoretic structure in deep learning. The entire V53 model was trained on a **consumer-grade CPU**, without GPU clusters.
+基于**双轨阶梯网络（Bilateral Ladder Network）**架构，在通用语料和易经古典文本上完成预训练。训练完成后核心参数被冻结（「道体」），作为后续所有领域适配的稳定基础。这一**冻结道体 + 轻量适配**范式建立在对**退化基态（Degenerate Ground State）**的发现之上——这是深度学习中一种规范场论结构。整个V53模型在**消费级CPU**上完成训练，无需GPU集群。
 
-It can be used for:
-- Multi-domain semantic understanding and classification
-- Feature extraction for downstream tasks
-- Structured reasoning over I Ching texts (including hexagram derivation)
-- As a cognitive foundation for any AI system requiring a stable semantic representation
+可用于：
+- 多领域文本的语义理解与分类
+- 作为下游任务的特征提取器
+- 易经文本的结构化推理（包括卦象推演）
+- 作为任何需要稳定语义表征的AI系统的认知基座
 
 ## 道体模型是什么
 
