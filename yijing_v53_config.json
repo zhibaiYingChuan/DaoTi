@@ -25,5 +25,5 @@
   "inference_script": "inference.py",
   "architecture_source": "Protected. Not included in this repository.",
   "training_code": "Protected. Contact for access.",
-  "description": "Frozen DaoTi (道体) foundation model for I Ching divination. Model weights (.pt) + minimal inference script included. Architecture source code protected."
+  "description": "Frozen DaoTi (道体) semantic foundation model with gauge-theoretic architecture. Pre-trained on general corpora and classical Chinese texts. Supports multi-domain semantic understanding, hexagram structural reasoning, and downstream task adaptation via lightweight adapters. Model weights (.pt) + inference scripts included. Architecture source code protected."
 }

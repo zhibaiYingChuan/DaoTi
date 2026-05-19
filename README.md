@@ -2,7 +2,15 @@
 
 > **算力不是门槛。结构性增效，而非规模堆积。**
 
-YiJing V53 Foundation (道体基座) is a neural network model for **I Ching (易经)** divination, text understanding, and multi-domain semantic analysis. It features a **frozen DaoTi + lightweight adapter** paradigm based on the discovery of a **Degenerate Ground State** — a gauge-field-theoretic structure in deep learning. The entire V53 model was trained on a **consumer-grade CPU**, without GPU clusters.
+YiJing V53 Foundation (道体基座) is a pre-trained neural network **semantic foundation model**. It takes Chinese natural language text as input and outputs structured semantic representations — including semantic vectors in a high-dimensional encoding space, state vectors in the Luoshu representation space, and 64-dimensional structured prototype vectors in the trigram space.
+
+Built on the **Bilateral Ladder Network** architecture and pre-trained on general-purpose corpora and I Ching classical texts, the model's core parameters are frozen post-training (the "DaoTi" or "Dao Body"), serving as a stable foundation for all subsequent domain adaptation via lightweight adapters. This **frozen DaoTi + lightweight adapter** paradigm is grounded in the discovery of a **Degenerate Ground State** — a gauge-field-theoretic structure in deep learning. The entire V53 model was trained on a **consumer-grade CPU**, without GPU clusters.
+
+It can be used for:
+- Multi-domain semantic understanding and classification
+- Feature extraction for downstream tasks
+- Structured reasoning over I Ching texts (including hexagram derivation)
+- As a cognitive foundation for any AI system requiring a stable semantic representation
 
 ## 道体模型是什么
 
@@ -366,7 +374,7 @@ DaoTi V53 runs on CPU by default. GPU mode provides ~3-5x speedup but is entirel
 ```bibtex
 @software{daoti_v53_2026,
   author = {独立研究者，知白},
-  title = {DaoTi V53 Foundation: A Gauge-Theoretic Frozen Foundation Model for I Ching Analysis},
+  title = {DaoTi V53 Foundation: A Semantic Foundation Model Based on Gauge-Theoretic Frozen Architecture},
   year = {2026},
   url = {https://github.com/zhibaiYingChuan/DaoTi}
 }
