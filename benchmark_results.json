@@ -2,7 +2,7 @@
   "random_baseline": {
     "task": "Random Baseline (8-class uniform)",
     "expected_accuracy": "12.5%",
-    "sampled_accuracy": "12.5%"
+    "sampled_accuracy": "7.8%"
   },
   "palace_classification": {
     "task": "64-Hexagram Palace Classification",
@@ -27,18 +27,18 @@
     "top1_correct": 1,
     "top5_correct": 5,
     "total": 64,
-    "avg_similarity": "0.6121",
-    "min_similarity": "0.6121",
-    "max_similarity": "0.6121"
+    "avg_similarity": "0.5816",
+    "min_similarity": "0.3372",
+    "max_similarity": "0.6232"
   },
   "coherence": {
     "task": "Coherence Distribution (Self-Calibrating Quality Signal)",
-    "mean": "0.5962",
-    "median": "0.5962",
-    "min": "0.5962",
-    "max": "0.5962",
-    "p25": "0.5962",
-    "p75": "0.5962",
+    "mean": "0.5896",
+    "median": "0.6098",
+    "min": "0.4020",
+    "max": "0.6357",
+    "p25": "0.6005",
+    "p75": "0.6126",
     "below_threshold_0.3": 0,
     "above_threshold_0.7": 0
   }
