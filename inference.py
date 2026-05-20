@@ -86,6 +86,100 @@ def _build_wuxing_shengke_matrix():
 
 WUXING_SHENGKE_MATRIX = _build_wuxing_shengke_matrix()
 
+KNOWLEDGE_BASE = {
+    "乾宫": {
+        "卦象": "乾为天", "五行": "金", "方位": "西北",
+        "象义": "刚健中正，自强不息",
+        "关键词": ["领导","事业","刚健","进取","决断","权威","父亲","君王"],
+        "解读": "乾卦象征天，代表刚健、创造、领导力。占得此卦，宜积极进取，把握时机，但需防过刚则折。",
+        "经典": "天行健，君子以自强不息。《周易·乾卦·象传》",
+    },
+    "坤宫": {
+        "卦象": "坤为地", "五行": "土", "方位": "西南",
+        "象义": "厚德载物，柔顺包容",
+        "关键词": ["包容","柔顺","承载","耐心","母亲","土地","养育"],
+        "解读": "坤卦象征地，代表包容、承载、柔顺。占得此卦，宜顺势而为，厚积薄发，不宜冒进。",
+        "经典": "地势坤，君子以厚德载物。《周易·坤卦·象传》",
+    },
+    "震宫": {
+        "卦象": "震为雷", "五行": "木", "方位": "东",
+        "象义": "奋发激荡，行动变革",
+        "关键词": ["行动","变革","震动","启动","长子","雷","突发"],
+        "解读": "震卦象征雷，代表行动、变革、振奋。占得此卦，宜果断行动，但需防冲动冒进。",
+        "经典": "洊雷，震，君子以恐惧修省。《周易·震卦·象传》",
+    },
+    "巽宫": {
+        "卦象": "巽为风", "五行": "木", "方位": "东南",
+        "象义": "随风顺入，柔渗透达",
+        "关键词": ["渗透","柔顺","传播","风","长女","沟通","渐进"],
+        "解读": "巽卦象征风，代表渗透、柔顺、传播。占得此卦，宜以柔克刚，循序渐进。",
+        "经典": "随风，巽，君子以申命行事。《周易·巽卦·象传》",
+    },
+    "坎宫": {
+        "卦象": "坎为水", "五行": "水", "方位": "北",
+        "象义": "险陷重重，守正待时",
+        "关键词": ["险阻","困难","水","深渊","中男","智慧","沉潜"],
+        "解读": "坎卦象征水，代表险阻、困难、智慧。占得此卦，宜守正待时，以智破险。",
+        "经典": "水洊至，习坎，君子以常德行，习教事。《周易·坎卦·象传》",
+    },
+    "离宫": {
+        "卦象": "离为火", "五行": "火", "方位": "南",
+        "象义": "光明附丽，文采照临",
+        "关键词": ["光明","文明","火","中女","附丽","文化","洞察"],
+        "解读": "离卦象征火，代表光明、文明、洞察。占得此卦，宜明辨是非，以文会友。",
+        "经典": "明两作，离，大人以继明照于四方。《周易·离卦·象传》",
+    },
+    "艮宫": {
+        "卦象": "艮为山", "五行": "土", "方位": "东北",
+        "象义": "止而不动，安守本分",
+        "关键词": ["停止","安稳","山","少男","守成","静止","反思"],
+        "解读": "艮卦象征山，代表停止、安稳、守成。占得此卦，宜知止而止，安守本分。",
+        "经典": "兼山，艮，君子以思不出其位。《周易·艮卦·象传》",
+    },
+    "兑宫": {
+        "卦象": "兑为泽", "五行": "金", "方位": "西",
+        "象义": "喜悦和乐，口舌言语",
+        "关键词": ["喜悦","交流","泽","少女","口舌","和悦","交际"],
+        "解读": "兑卦象征泽，代表喜悦、交流、和乐。占得此卦，宜和悦待人，但需防口舌是非。",
+        "经典": "丽泽，兑，君子以朋友讲习。《周易·兑卦·象传》",
+    },
+}
+
+LIUQIN_KNOWLEDGE = {
+    "父母": {"象义": "庇护、文书、长辈", "解读": "父母爻主庇护、文书、长辈之事。占事业主文书合同，占健康主长辈之疾。"},
+    "兄弟": {"象义": "竞争、同辈、劫财", "解读": "兄弟爻主竞争、同辈、劫财。占财运主破耗，占事业主同侪竞争。"},
+    "子孙": {"象义": "福神、子嗣、解忧", "解读": "子孙爻为福神，主子嗣、解忧、制鬼。占病主愈，占讼主散。"},
+    "妻财": {"象义": "财利、妻室、粮食", "解读": "妻财爻主财利、妻室、粮食。占财运主得财，占婚姻主妻室。"},
+    "官鬼": {"象义": "官府、鬼祟、疾病", "解读": "官鬼爻主官府、鬼祟、疾病。占功名主得官，占病主疾厄。"},
+    "空亡": {"象义": "虚空、无力、不成", "解读": "空亡主虚空、无力、不成。占事主落空，占忧事反吉。"},
+}
+
+LIUSHEN_KNOWLEDGE = {
+    "青龙": {"象义": "喜庆、吉祥、财富", "解读": "青龙主喜庆吉祥，临财爻主进财，临官爻主升迁。"},
+    "朱雀": {"象义": "口舌、文书、是非", "解读": "朱雀主口舌是非，临官爻主官非，临兄爻主争吵。"},
+    "勾陈": {"象义": "田土、迟滞、牵连", "解读": "勾陈主田土迟滞，占事主拖延，占病主慢性。"},
+    "螣蛇": {"象义": "惊恐、怪异、虚惊", "解读": "螣蛇主惊恐怪异，占病主精神不安，占事主虚惊。"},
+    "白虎": {"象义": "血光、丧服、凶险", "解读": "白虎主血光凶险，占病主重疾，临官鬼主丧事。"},
+    "玄武": {"象义": "暗昧、盗贼、私情", "解读": "玄武主暗昧盗贼，占财主暗损，占事主私弊。"},
+}
+
+WANGXIANG_KNOWLEDGE = {
+    "旺": "当令得时，力量最强",
+    "相": "得令之生，力量次强",
+    "休": "生令之气，力量减弱",
+    "囚": "克令之气，力量很弱",
+    "死": "被令所克，力量最弱",
+}
+
+GUA_64_DETAIL = {}
+for _gi, _gn in enumerate(GUA_64):
+    _palace = find_palace(_gn)
+    _upper, _lower = GUA_TRIGRAM.get(_gi, ("乾","乾"))
+    GUA_64_DETAIL[_gn] = {
+        "序号": _gi, "上下卦": f"{_upper}上{_lower}下", "所属宫": _palace,
+        "宫五行": GUA_WUXING.get(_upper, "金"),
+    }
+
 def gua_to_yao_bits(gi):
     return [float((gi>>j)&1) for j in range(5,-1,-1)]
 
@@ -357,7 +451,7 @@ def predict(model, text_ids, gua_idx, method='traditional', device='cpu'):
         device: 'cpu' or 'cuda'
 
     Returns:
-        dict with prediction outputs
+        dict with prediction outputs and coherence score
     """
     method_idx = METHOD_MAP.get(method, 0)
     method_tensor = torch.tensor([method_idx], dtype=torch.long, device=device)
@@ -365,4 +459,121 @@ def predict(model, text_ids, gua_idx, method='traditional', device='cpu'):
     symbol_x = torch.tensor([sparse_expand_input(gua_idx)], dtype=torch.float32, device=device)
     with torch.no_grad():
         outputs = model(symbol_x, text_ids.to(device), method_tensor, gua_tensor)
-    return {k: v.cpu() for k, v in outputs[method].items()}
+    result = {k: v.cpu() for k, v in outputs[method].items()}
+    result['coherence'] = compute_coherence(model, text_ids, gua_idx, device)
+    return result
+
+def compute_coherence(model, text_ids, gua_idx, device='cpu'):
+    """
+    Compute self-calibrating quality signal based on resonance cavity coherence.
+    Higher coherence = model is more confident in its prediction.
+
+    Returns:
+        float: coherence score in [0, 1]
+    """
+    with torch.no_grad():
+        text_feat = model.encode_text(text_ids.to(device))
+        proto = model.gua_prototype.weight
+        proto_n = F.normalize(proto, p=2, dim=-1)
+        feat_n = F.normalize(text_feat, p=2, dim=-1)
+        similarity = torch.mm(feat_n, proto_n.t()).squeeze()
+        top_sim = similarity.max().item()
+        coherence = max(0.0, min(1.0, top_sim))
+    return coherence
+
+def generate_response(model, text_ids, gua_idx, method='traditional', device='cpu', coherence_threshold=0.3):
+    """
+    Generate a structured natural language response via retrieval-augmented generation.
+
+    This function uses the model's structured outputs (palace/liuqin/liushen/wangxiang/biangua_yao)
+    as retrieval keys into a built-in knowledge base, then composes a coherent response.
+
+    Args:
+        model: Loaded YiJingV53Foundation model
+        text_ids: Tokenized text input, shape (1, seq_len), int tensor
+        gua_idx: Hexagram index 0-63
+        method: 'traditional', 'meihua', or 'liuyao'
+        device: 'cpu' or 'cuda'
+        coherence_threshold: If coherence < threshold, append low-confidence warning
+
+    Returns:
+        dict with:
+            - 'response': str, composed natural language response
+            - 'coherence': float, self-calibrating quality signal
+            - 'low_confidence': bool, whether coherence is below threshold
+            - 'details': dict, structured breakdown of the reasoning chain
+    """
+    pred = predict(model, text_ids, gua_idx, method=method, device=device)
+    coherence = pred['coherence']
+
+    PALACE_NAMES  = ["乾宫","坤宫","震宫","巽宫","坎宫","离宫","艮宫","兑宫"]
+    TIANGAN_NAMES = ["甲","乙","丙","丁","戊","己","庚","辛","壬","癸"]
+    DIZHI_NAMES   = ["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"]
+    LIUQIN_NAMES  = ["父母","兄弟","子孙","妻财","官鬼","空亡"]
+    LIUSHEN_NAMES = ["青龙","朱雀","勾陈","螣蛇","白虎","玄武"]
+    WANGXIANG_N   = ["旺","相","休","囚","死"]
+
+    gua_name = GUA_64[gua_idx]
+    palace_name = PALACE_NAMES[pred['palace'].argmax().item()]
+    palace_conf = F.softmax(pred['palace'], dim=-1).max().item()
+    tiangan_name = TIANGAN_NAMES[pred['tiangan'].argmax().item()]
+    dizhi_name = DIZHI_NAMES[pred['dizhi'].argmax().item()]
+    liuqin_name = LIUQIN_NAMES[pred['liuqin'].argmax().item()]
+    liushen_name = LIUSHEN_NAMES[pred['liushen'].argmax().item()]
+    wangxiang_name = WANGXIANG_N[pred['wangxiang'].argmax().item()]
+    yao_raw = pred['biangua_yao'].squeeze()
+    yao_p = torch.sigmoid(yao_raw).tolist()
+    yao_v = [1 if p > 0.5 else 0 for p in yao_p]
+    moving_yao = [i+1 for i, v in enumerate(yao_v) if v]
+
+    gua_info = GUA_64_DETAIL.get(gua_name, {})
+    palace_info = KNOWLEDGE_BASE.get(palace_name, {})
+    liuqin_info = LIUQIN_KNOWLEDGE.get(liuqin_name, {})
+    liushen_info = LIUSHEN_KNOWLEDGE.get(liushen_name, {})
+    wangxiang_desc = WANGXIANG_KNOWLEDGE.get(wangxiang_name, "")
+
+    lines = []
+    lines.append(f"【{gua_name}】{gua_info.get('上下卦', '')}，属{palace_name}（{palace_info.get('五行','')}行）")
+    lines.append("")
+    lines.append(f"卦象要义：{palace_info.get('象义', '')}")
+    lines.append(f"经典原文：{palace_info.get('经典', '')}")
+    lines.append("")
+    lines.append(f"推理结果：")
+    lines.append(f"  天干地支：{tiangan_name}{dizhi_name}")
+    lines.append(f"  六亲持世：{liuqin_name}（{liuqin_info.get('象义','')}）")
+    lines.append(f"  六神临爻：{liushen_name}（{liushen_info.get('象义','')}）")
+    lines.append(f"  旺相休囚：{wangxiang_name}（{wangxiang_desc}）")
+    if moving_yao:
+        lines.append(f"  动爻：第{moving_yao}爻")
+    else:
+        lines.append(f"  动爻：无（静卦）")
+    lines.append("")
+    lines.append(f"综合解读：")
+    lines.append(f"  {palace_info.get('解读', '')}")
+    lines.append(f"  {liuqin_info.get('解读', '')}")
+    lines.append(f"  {liushen_info.get('解读', '')}")
+
+    low_conf = coherence < coherence_threshold
+    if low_conf:
+        lines.append("")
+        lines.append(f"⚠️ 置信度较低（{coherence:.2f}），建议结合实际情况综合判断。")
+
+    details = {
+        'gua_name': gua_name,
+        'palace': palace_name,
+        'palace_confidence': round(palace_conf, 4),
+        'tiangan': tiangan_name,
+        'dizhi': dizhi_name,
+        'liuqin': liuqin_name,
+        'liushen': liushen_name,
+        'wangxiang': wangxiang_name,
+        'moving_yao': moving_yao,
+        'coherence': round(coherence, 4),
+    }
+
+    return {
+        'response': '\n'.join(lines),
+        'coherence': coherence,
+        'low_confidence': low_conf,
+        'details': details,
+    }

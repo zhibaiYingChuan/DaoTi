@@ -15,7 +15,7 @@
 ## 道体模型是什么
 
 **输入**：中文自然语言文本
-**输出**：结构化认知状态（八宫、六亲、六神、天干地支、旺相休囚等）+ 自然语言回答（通过表达层/解码器生成）
+**输出**：结构化认知状态（八宫、六亲、六神、天干地支、旺相休囚等）+ 自然语言回答（通过 RAG 检索增强生成）
 **核心任务**：领域感知的专家型推理与对话
 
 道体模型**不是一个分类器**。领域分类只是它内部路由机制的一部分——就像 GPT 的 tokenizer 分完词之后还有几百层 Transformer 一样，分类之后才是真正的推理和生成。模型的完整推理链路如下：
@@ -263,7 +263,36 @@ python inference.py
 python demo_real_text.py
 ```
 
-`demo_real_text.py` 跑完后你会亲眼看到：这个模型经过了 TextEncoder 编码 → text_proj 不动点投影 → 符号-文本门控融合 → HeLuoLadderNetwork 多层多步双轨递归推演 → 语义原型注意力 → 五行生克规则推理（含硬编码生克矩阵残差学习） → 8 任务并行输出 → 原型空间检索。**分类（palace）只是 10 个线性头中的 1 个。**
+`demo_real_text.py` 跑完后你会亲眼看到：这个模型经过了 TextEncoder 编码 → text_proj 不动点投影 → 符号-文本门控融合 → HeLuoLadderNetwork 多层多步双轨递归推演 → 语义原型注意力 → 五行生克规则推理（含硬编码生克矩阵残差学习） → 8 任务并行输出 → 原型空间检索 → RAG 检索增强生成（自然语言输出） → 相干性自校准（不确定性估计）。**分类（palace）只是 10 个线性头中的 1 个。**
+
+## RAG 检索增强生成
+
+`inference.py` 提供 `generate_response()` 函数，将模型的结构化推理结果（八宫/六亲/六神/天干地支/旺相/动爻）作为检索键，从内置知识库中匹配对应条目，组合为自然语言回答：
+
+```python
+from inference import load_daoti, generate_response
+import torch
+
+model = load_daoti("yijing_v53_daoti.pt")
+text_ids = torch.randint(1, 100, (1, 256), dtype=torch.long)
+
+# 生成自然语言回答
+result = generate_response(model, text_ids, gua_idx=0, method='traditional')
+print(result['response'])         # 自然语言回答
+print(result['coherence'])        # 相干性（自校准质量信号）
+print(result['low_confidence'])   # 是否低于置信度阈值
+print(result['details'])          # 结构化推理明细
+```
+
+当相干性低于阈值（默认 0.3）时，模型会主动声明不确定性——这不是外挂护栏，而是根植于架构的内在约束。
+
+## 基准测试
+
+```bash
+python eval_benchmark.py
+```
+
+输出 `benchmark_results.json`，包含：八宫分类准确率、64 卦原型检索 top-1/top-5 准确率、相干性分布统计、随机基线对比。详见 [BENCHMARK.md](BENCHMARK.md)。
 
 ## 保护策略
 

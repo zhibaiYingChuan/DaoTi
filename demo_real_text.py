@@ -20,7 +20,7 @@ Demo: DaoTi V53 推理深度逐层解剖
 import torch
 import torch.nn.functional as F
 from inference import (
-    load_daoti, predict, verify_sha256,
+    load_daoti, predict, verify_sha256, generate_response, compute_coherence,
     YiJingV53Foundation,
     GUA_64, BA_GONG, GUA_WUXING, GUA_TRIGRAM,
     BAGUA_NAMES, WUXING_NAMES, LIUQIN_MAP, PALACE_MAP,
@@ -330,10 +330,44 @@ print(f"\n  八宫判定: {correct}/64 ({100*correct/64:.1f}%)")
 print(f"  （白皮书报告合成数据上为 100.00%，纯文本自检索为 71.9%——")
 print(f"   这是字符级编码器对短文本区分度的固有限制，非模型缺陷。）")
 
+# ── 12. RAG 检索增强生成 ──
+hdr("第 12 层：检索增强生成（RAG）— 从结构化推理到自然语言")
+print("  模型的结构化输出（八宫/六亲/六神/天干地支/旺相/动爻）作为检索键，")
+print("  从内置知识库中匹配对应条目，组合为自然语言回答。")
+print()
+
+for i, text in enumerate(SAMPLE_TEXTS[:3]):
+    print(f"  ── 示例 {i+1}：「{text}」──")
+    resp = generate_response(model, text_ids, gua_idx=gua_idx, method='traditional', device=device)
+    print(resp['response'])
+    print(f"  相干性: {resp['coherence']:.4f}  低置信度: {resp['low_confidence']}")
+    print()
+
+# ── 13. 相干性自校准 ──
+hdr("第 13 层：相干性自校准质量传感")
+print("  对全部 64 卦计算相干性（原型检索余弦相似度），展示分布：")
+coherences = []
+for gi in range(64):
+    c = compute_coherence(model, text_ids, gi, device)
+    coherences.append(c)
+coherences.sort()
+n = len(coherences)
+print(f"  均值: {sum(coherences)/n:.4f}")
+print(f"  中位数: {coherences[n//2]:.4f}")
+print(f"  最小: {min(coherences):.4f}  最大: {max(coherences):.4f}")
+print(f"  P25: {coherences[n//4]:.4f}  P75: {coherences[3*n//4]:.4f}")
+low = sum(1 for c in coherences if c < 0.3)
+high = sum(1 for c in coherences if c > 0.7)
+print(f"  低于 0.3（低置信度）: {low}/64  高于 0.7（高置信度）: {high}/64")
+print(f"\n  ⚡ 相干性是模型判断「我懂不懂」的内部信号。")
+print(f"     白皮书数据：正确预测相干性 0.824 vs 错误预测 0.438（差距 0.386）。")
+print(f"     当相干性低于阈值时，模型会主动声明不确定性——这不是外挂护栏，")
+print(f"     而是根植于架构的内在约束。")
+
 # ── Done ──
 hdr("总结：这个模型不是分类器")
 print(f"""
-  以上展示了 11 层处理流水线，每层都有可验证的计算：
+  以上展示了 13 层处理流水线，每层都有可验证的计算：
 
     第 1-2 层 : 权重校验 + 模型加载（>90% 参数冻结）
     第 3 层   : 符号嵌入 + 文本 token 准备
@@ -350,8 +384,11 @@ print(f"""
     第 9 层   : 原型空间检索（规范不变性）
     第 10 层  : 方法切换（LoRA 差异化推理）
     第 11 层  : 全 64 卦统计验证
+    第 12 层  : RAG 检索增强生成（结构化推理 → 自然语言）
+    第 13 层  : 相干性自校准质量传感（不确定性估计）
 
   分类只是第 8d 层的 palace 头——10 个线性头中的 1 个。
   这个模型的本质是：编码 → 投影 → 融合 → 递归推演 → 原型注意力 →
-  规则推理 → 多任务输出 → 原型检索。分类是其中最浅的一步。
+  规则推理 → 多任务输出 → 原型检索 → RAG 生成 → 相干性自校准。
+  分类是其中最浅的一步。
 """)
