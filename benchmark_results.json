@@ -1,0 +1,45 @@
+{
+  "random_baseline": {
+    "task": "Random Baseline (8-class uniform)",
+    "expected_accuracy": "12.5%",
+    "sampled_accuracy": "12.5%"
+  },
+  "palace_classification": {
+    "task": "64-Hexagram Palace Classification",
+    "accuracy": "100.0%",
+    "correct": 64,
+    "total": 64,
+    "per_palace": {
+      "乾宫": "8/8",
+      "坤宫": "8/8",
+      "震宫": "8/8",
+      "巽宫": "8/8",
+      "坎宫": "8/8",
+      "离宫": "8/8",
+      "艮宫": "8/8",
+      "兑宫": "8/8"
+    }
+  },
+  "retrieval": {
+    "task": "64-Hexagram Prototype Retrieval",
+    "top1_accuracy": "1.6%",
+    "top5_accuracy": "7.8%",
+    "top1_correct": 1,
+    "top5_correct": 5,
+    "total": 64,
+    "avg_similarity": "0.6121",
+    "min_similarity": "0.6121",
+    "max_similarity": "0.6121"
+  },
+  "coherence": {
+    "task": "Coherence Distribution (Self-Calibrating Quality Signal)",
+    "mean": "0.5962",
+    "median": "0.5962",
+    "min": "0.5962",
+    "max": "0.5962",
+    "p25": "0.5962",
+    "p75": "0.5962",
+    "below_threshold_0.3": 0,
+    "above_threshold_0.7": 0
+  }
+}

@@ -171,6 +171,11 @@ WANGXIANG_KNOWLEDGE = {
     "死": "被令所克，力量最弱",
 }
 
+def find_palace(g):
+    for p, gs in BA_GONG.items():
+        if g in gs: return p
+    return "乾宫"
+
 GUA_64_DETAIL = {}
 for _gi, _gn in enumerate(GUA_64):
     _palace = find_palace(_gn)
@@ -182,11 +187,6 @@ for _gi, _gn in enumerate(GUA_64):
 
 def gua_to_yao_bits(gi):
     return [float((gi>>j)&1) for j in range(5,-1,-1)]
-
-def find_palace(g):
-    for p, gs in BA_GONG.items():
-        if g in gs: return p
-    return "乾宫"
 
 def sparse_expand_input(gi, yp=0, yi=0, ri=0, si=0, mi=0):
     x = np.zeros(STATE_DIM, dtype=np.float32)
