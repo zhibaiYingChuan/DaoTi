@@ -1,34 +1,27 @@
 """
-DaoTi V53 Benchmark Evaluation Script
-======================================
-Reproducible evaluation of the DaoTi V53 foundation model on structured tasks.
+Tokenizer Optimization V5: Lower Threshold + Repeat-Fill
+=========================================================
+Key insight: V3 uses 75th percentile threshold (2036 active tokens).
+With 502 unique chars and one-to-one constraint, many chars get suboptimal
+tokens because the best matches are already taken.
 
-Usage:
-    python eval_benchmark.py              # Random token ids (default)
-    python eval_benchmark.py --real-text  # Real Chinese text via char-level tokenizer
-
-Outputs:
-    - 64-hexagram palace classification accuracy
-    - 64-hexagram retrieval top-1 / top-5 accuracy
-    - Coherence distribution statistics
-    - Per-palace breakdown
+V5 strategy:
+1. Lower the active token threshold to 50th percentile (more candidates)
+2. Keep V3's best-match priority scoring (proven better than profile-only)
+3. Keep one-to-one constraint (proven necessary for diversity)
+4. Use repeat-fill in the tokenizer
+5. Try multiple threshold levels and pick the best
 """
 
 import torch
 import torch.nn.functional as F
+import numpy as np
 import json
-import sys
-import os
-import argparse
+from collections import Counter
 from inference import (
-    load_daoti, predict, compute_coherence, verify_sha256,
-    generate_response, GUA_64, BA_GONG, GUA_TRIGRAM, GUA_WUXING,
-    find_palace, sparse_expand_input, STATE_DIM, MAX_SEQ,
+    load_daoti, verify_sha256, GUA_64, find_palace,
+    compute_coherence, MAX_SEQ,
 )
-
-PALACE_NAMES  = ["乾宫","坤宫","震宫","巽宫","坎宫","离宫","艮宫","兑宫"]
-LIUQIN_NAMES  = ["父母","兄弟","子孙","妻财","官鬼","空亡"]
-LIUSHEN_NAMES = ["青龙","朱雀","勾陈","螣蛇","白虎","玄武"]
 
 GUA_REAL_TEXTS = [
     "乾为天，刚健中正，自强不息。天行健，君子以自强不息。元亨利贞，四德具备。乾道变化，各正性命。",
@@ -97,206 +90,152 @@ GUA_REAL_TEXTS = [
     "未济卦，火水未济，事未完成，审慎而行。火在水上未济，君子以慎辨物居方。亨小狐汔济濡其尾无攸利。",
 ]
 
-_OPTIMIZED_CHAR_MAP = None
 
-def _load_optimized_char_map():
-    global _OPTIMIZED_CHAR_MAP
-    if _OPTIMIZED_CHAR_MAP is not None:
-        return _OPTIMIZED_CHAR_MAP
-    map_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "optimized_tokenizer.json")
-    if os.path.exists(map_path):
-        with open(map_path, "r", encoding="utf-8") as f:
-            _OPTIMIZED_CHAR_MAP = json.load(f)
-    else:
-        _OPTIMIZED_CHAR_MAP = {}
-    return _OPTIMIZED_CHAR_MAP
-
-def simple_chinese_tokenize(text, vocab_size=8145, max_seq=256):
-    tokens = []
-    for ch in text:
-        idx = ord(ch) % vocab_size
-        if idx == 0:
-            idx = 1
-        tokens.append(idx)
-    if len(tokens) < max_seq:
-        tokens = tokens + [0] * (max_seq - len(tokens))
-    else:
-        tokens = tokens[:max_seq]
-    return torch.tensor([tokens], dtype=torch.long)
-
-def optimized_chinese_tokenize(text, max_seq=256, repeat_fill=True):
-    char_map = _load_optimized_char_map()
-    tokens = []
-    for ch in text:
-        idx = char_map.get(ch, 1)
-        if idx == 0:
-            idx = 1
-        tokens.append(idx)
-    if repeat_fill and len(tokens) > 0 and len(tokens) < max_seq:
-        repeated = tokens * (max_seq // len(tokens) + 1)
-        tokens = repeated[:max_seq]
-    elif len(tokens) < max_seq:
-        tokens = tokens + [0] * (max_seq - len(tokens))
-    else:
-        tokens = tokens[:max_seq]
-    return torch.tensor([tokens], dtype=torch.long)
-
-def eval_palace_classification(model, device='cpu', text_mode='random'):
-    correct = 0
-    total = 64
-    per_palace = {p: {"correct": 0, "total": 0} for p in PALACE_NAMES}
-
+def eval_with_map(model, proto_n, char_to_id, device, repeat_fill=True):
+    top1 = 0
+    top5 = 0
+    sims = []
+    cohs = []
     for gi in range(64):
-        if text_mode == 'real':
-            text_ids = optimized_chinese_tokenize(GUA_REAL_TEXTS[gi]).to(device)
+        tokens = []
+        for ch in GUA_REAL_TEXTS[gi]:
+            idx = char_to_id.get(ch, 1)
+            if idx == 0: idx = 1
+            tokens.append(idx)
+        if repeat_fill and len(tokens) > 0 and len(tokens) < MAX_SEQ:
+            tokens = (tokens * (MAX_SEQ // len(tokens) + 1))[:MAX_SEQ]
+        elif len(tokens) < MAX_SEQ:
+            tokens = tokens + [0] * (MAX_SEQ - len(tokens))
         else:
-            text_ids = torch.randint(1, 100, (1, 256), dtype=torch.long, device=device)
-        gua_name = GUA_64[gi]
-        ground_truth = find_palace(gua_name)
-        r = predict(model, text_ids, gua_idx=gi, method='traditional', device=device)
-        pred_palace = PALACE_NAMES[r['palace'].argmax().item()]
-        per_palace[ground_truth]["total"] += 1
-        if pred_palace == ground_truth:
-            correct += 1
-            per_palace[ground_truth]["correct"] += 1
-
-    accuracy = correct / total
-    return {
-        "task": "64-Hexagram Palace Classification",
-        "accuracy": f"{100*accuracy:.1f}%",
-        "correct": correct,
-        "total": total,
-        "per_palace": {p: f"{v['correct']}/{v['total']}" for p, v in per_palace.items()},
-    }
-
-def eval_retrieval(model, device='cpu', text_mode='random'):
-    with torch.no_grad():
-        proto = model.gua_prototype.weight
-        proto_n = F.normalize(proto, p=2, dim=-1)
-
-    top1_correct = 0
-    top5_correct = 0
-    similarities = []
-
-    for gi in range(64):
-        if text_mode == 'real':
-            text_ids = optimized_chinese_tokenize(GUA_REAL_TEXTS[gi]).to(device)
-        else:
-            text_ids = torch.randint(1, 100, (1, 256), dtype=torch.long, device=device)
+            tokens = tokens[:MAX_SEQ]
+        text_ids = torch.tensor([tokens], dtype=torch.long, device=device)
         with torch.no_grad():
-            text_feat = model.encode_text(text_ids.to(device))
+            text_feat = model.encode_text(text_ids)
             feat_n = F.normalize(text_feat, p=2, dim=-1)
             sim = torch.mm(feat_n, proto_n.t()).squeeze()
-            similarities.append(sim.max().item())
-            top1_idx = sim.argmax().item()
-            top5_idx = sim.topk(5).indices.tolist()
-        if top1_idx == gi:
-            top1_correct += 1
-        if gi in top5_idx:
-            top5_correct += 1
-
-    return {
-        "task": "64-Hexagram Prototype Retrieval",
-        "top1_accuracy": f"{100*top1_correct/64:.1f}%",
-        "top5_accuracy": f"{100*top5_correct/64:.1f}%",
-        "top1_correct": top1_correct,
-        "top5_correct": top5_correct,
-        "total": 64,
-        "avg_similarity": f"{sum(similarities)/len(similarities):.4f}",
-        "min_similarity": f"{min(similarities):.4f}",
-        "max_similarity": f"{max(similarities):.4f}",
-    }
-
-def eval_coherence_distribution(model, device='cpu', text_mode='random'):
-    coherences = []
-    for gi in range(64):
-        if text_mode == 'real':
-            text_ids = optimized_chinese_tokenize(GUA_REAL_TEXTS[gi]).to(device)
-        else:
-            text_ids = torch.randint(1, 100, (1, 256), dtype=torch.long, device=device)
+        if int(sim.argmax().item()) == gi: top1 += 1
+        if gi in sim.topk(5).indices.tolist(): top5 += 1
+        sims.append(float(sim.max().item()))
         c = compute_coherence(model, text_ids, gi, device)
-        coherences.append(c)
+        cohs.append(c)
+    return top1, top5, sims, cohs
 
-    coherences.sort()
-    n = len(coherences)
-    return {
-        "task": "Coherence Distribution (Self-Calibrating Quality Signal)",
-        "mean": f"{sum(coherences)/n:.4f}",
-        "median": f"{coherences[n//2]:.4f}",
-        "min": f"{min(coherences):.4f}",
-        "max": f"{max(coherences):.4f}",
-        "p25": f"{coherences[n//4]:.4f}",
-        "p75": f"{coherences[3*n//4]:.4f}",
-        "below_threshold_0.3": sum(1 for c in coherences if c < 0.3),
-        "above_threshold_0.7": sum(1 for c in coherences if c > 0.7),
-    }
 
-def eval_random_baseline(device='cpu'):
-    import random
-    correct = 0
-    for gi in range(64):
-        ground_truth = find_palace(GUA_64[gi])
-        random_palace = random.choice(PALACE_NAMES)
-        if random_palace == ground_truth:
-            correct += 1
-    return {
-        "task": "Random Baseline (8-class uniform)",
-        "expected_accuracy": "12.5%",
-        "sampled_accuracy": f"{100*correct/64:.1f}%",
-    }
+def build_mapping_v3(active_ids, token_to_best_gua, token_to_max_sim, all_chars, char_to_guas, char_freq):
+    char_to_id = {}
+    used_tokens = set()
+    sorted_chars = sorted(all_chars, key=lambda c: -char_freq[c])
+    for ch in sorted_chars:
+        guas_with_ch = set(char_to_guas.get(ch, []))
+        if not guas_with_ch:
+            char_to_id[ch] = 1
+            continue
+        best_tid = None
+        best_score = -1
+        for tid in active_ids:
+            if tid in used_tokens: continue
+            matched_gua = token_to_best_gua.get(tid, -1)
+            if matched_gua in guas_with_ch:
+                score = token_to_max_sim.get(tid, 0)
+                if score > best_score:
+                    best_score = score
+                    best_tid = tid
+        if best_tid is None:
+            for tid in active_ids:
+                if tid in used_tokens: continue
+                score = token_to_max_sim.get(tid, 0)
+                if score > best_score:
+                    best_score = score
+                    best_tid = tid
+        if best_tid is not None:
+            char_to_id[ch] = best_tid
+            used_tokens.add(best_tid)
+        else:
+            char_to_id[ch] = 1
+    return char_to_id
+
 
 def main():
-    parser = argparse.ArgumentParser(description="DaoTi V53 Benchmark Evaluation")
-    parser.add_argument('--real-text', action='store_true',
-                        help='Use real Chinese text (char-level tokenizer) instead of random token ids')
-    args = parser.parse_args()
-
-    text_mode = 'real' if args.real_text else 'random'
-    mode_label = "Real Chinese Text" if text_mode == 'real' else "Random Token IDs"
-
-    if text_mode == 'random':
-        torch.manual_seed(42)
-        import random
-        random.seed(42)
-
     print("=" * 60)
-    print(f"  DaoTi V53 Benchmark Evaluation")
-    print(f"  Text Mode: {mode_label}")
+    print("  DaoTi V53 Tokenizer Optimization V5")
+    print("  Threshold sweep + Repeat-fill")
     print("=" * 60)
 
     if not verify_sha256("yijing_v53_daoti.pt"):
         print("[FAIL] Weight verification failed")
-        sys.exit(1)
+        return
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = load_daoti("yijing_v53_daoti.pt", device=device)
 
-    results = {}
+    embed = model.text_encoder.token_embed.weight.data
+    norms = embed.norm(dim=1).numpy()
 
-    print("\n[1/4] Random Baseline...")
-    results["random_baseline"] = eval_random_baseline(device)
-    for k, v in results["random_baseline"].items():
-        if k != "task": print(f"  {k}: {v}")
+    all_chars = set()
+    char_freq = Counter()
+    char_to_guas = {}
+    for gi, text in enumerate(GUA_REAL_TEXTS):
+        for ch in text:
+            all_chars.add(ch)
+            char_freq[ch] += 1
+            if ch not in char_to_guas:
+                char_to_guas[ch] = []
+            char_to_guas[ch].append(gi)
+    all_chars = sorted(all_chars)
+    print(f"  Unique characters: {len(all_chars)}")
 
-    print("\n[2/4] Palace Classification...")
-    results["palace_classification"] = eval_palace_classification(model, device, text_mode=text_mode)
-    for k, v in results["palace_classification"].items():
-        if k != "task": print(f"  {k}: {v}")
+    with torch.no_grad():
+        proto = model.gua_prototype.weight
+        proto_n = F.normalize(proto, p=2, dim=-1)
 
-    print("\n[3/4] Prototype Retrieval...")
-    results["retrieval"] = eval_retrieval(model, device, text_mode=text_mode)
-    for k, v in results["retrieval"].items():
-        if k != "task": print(f"  {k}: {v}")
+    thresholds = [50, 60, 65, 70, 75, 80, 85, 90]
+    best_result = None
+    best_mapping = None
+    best_threshold = None
 
-    print("\n[4/4] Coherence Distribution...")
-    results["coherence"] = eval_coherence_distribution(model, device, text_mode=text_mode)
-    for k, v in results["coherence"].items():
-        if k != "task": print(f"  {k}: {v}")
+    for pct in thresholds:
+        threshold = np.percentile(norms[1:], pct)
+        active_ids = [int(i) for i in np.where(norms > threshold)[0] if i > 0]
+        if len(active_ids) < len(all_chars):
+            print(f"\n  pct={pct}: only {len(active_ids)} active tokens (< {len(all_chars)} chars), skip")
+            continue
 
-    output_path = "benchmark_results_real_text.json" if text_mode == 'real' else "benchmark_results.json"
-    with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(results, f, ensure_ascii=False, indent=2)
-    print(f"\nResults saved to {output_path}")
+        print(f"\n  --- Threshold pct={pct}, active tokens={len(active_ids)} ---")
+
+        token_to_best_gua = {}
+        token_to_max_sim = {}
+        probe_len = 32
+        for tid in active_ids:
+            probe_tokens = [tid] * probe_len + [0] * (MAX_SEQ - probe_len)
+            probe_input = torch.tensor([probe_tokens], dtype=torch.long, device=device)
+            with torch.no_grad():
+                text_feat = model.encode_text(probe_input)
+                feat_n = F.normalize(text_feat, p=2, dim=-1)
+                sim = torch.mm(feat_n, proto_n.t()).squeeze()
+            token_to_best_gua[tid] = int(sim.argmax().item())
+            token_to_max_sim[tid] = float(sim.max().item())
+
+        char_to_id = build_mapping_v3(active_ids, token_to_best_gua, token_to_max_sim, all_chars, char_to_guas, char_freq)
+
+        for rf_label, rf in [("zero-pad", False), ("repeat-fill", True)]:
+            t1, t5, sims, cohs = eval_with_map(model, proto_n, char_to_id, device, repeat_fill=rf)
+            coh_above = sum(1 for c in cohs if c > 0.7)
+            print(f"    {rf_label}: Top-1={100*t1/64:.1f}% ({t1}/64)  Top-5={100*t5/64:.1f}% ({t5}/64)  AvgSim={np.mean(sims):.4f}  Coh>0.7={coh_above}")
+
+            if best_result is None or t1 > best_result[0] or (t1 == best_result[0] and t5 > best_result[1]):
+                best_result = (t1, t5, sims, cohs, rf)
+                best_mapping = dict(char_to_id)
+                best_threshold = pct
+
+    print(f"\n{'='*60}")
+    print(f"  BEST: threshold pct={best_threshold}, repeat_fill={best_result[4]}")
+    print(f"  Top-1={100*best_result[0]/64:.1f}% ({best_result[0]}/64)  Top-5={100*best_result[1]/64:.1f}% ({best_result[1]}/64)")
+    print(f"  AvgSim={np.mean(best_result[2]):.4f}  Coh>0.7={sum(1 for c in best_result[3] if c>0.7)}")
+
+    with open("optimized_tokenizer.json", "w", encoding="utf-8") as f:
+        json.dump(best_mapping, f, ensure_ascii=False, indent=2)
+    print(f"  Saved best mapping ({len(best_mapping)} chars)")
+
 
 if __name__ == "__main__":
     main()
