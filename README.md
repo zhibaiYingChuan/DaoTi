@@ -6,7 +6,7 @@
 >
 > **核心设计**：道体基座永久冻结，仅通过轻量适配器学习新知识。**本项目不提供基座训练代码，也不接受对基座权重的修改请求。**
 
-**🚀 [在线演示](https://modelscope.cn/studios/spring30/daoti-v53-spike)** | **📖 [论文](papers/)** | **📄 [白皮书](白皮书_道体基座技术.md)** | **💬 [讨论](https://github.com/zhibaiYingChuan/DaoTi/issues)**
+**🚀 [在线演示](https://modelscope.cn/studios/spring30/daoti-v53-spike)** | **📖 [论文](papers/)** | **📄 [白皮书](docs/白皮书_道体基座技术.md)** | **💬 [讨论](https://github.com/zhibaiYingChuan/DaoTi/issues)**
 
 道体基座（DaoTi V53 Foundation）是一个预训练的神经网络**语义基座模型**。它以中文自然语言文本为输入，输出结构化语义表征——包括编码空间中的语义向量、洛书空间中的状态向量，以及64维结构化原型向量（卦象空间）。
 
@@ -39,28 +39,38 @@ python demo_real_text.py
 
 ```
 DaoTi/
-├── app.py                      # Gradio 交互式演示（浏览器体验）
+├── inference.py                # 推理接口（加载 + 预测 + 适配器加载）
+├── _model_core.py              # 模型架构定义（推理构建版，受许可证保护）
 ├── _constants.py               # 数据常量（卦象、五行、知识库等）
-├── _model_core.py              # 模型架构定义（受许可证保护）
-├── inference.py                # 推理接口（加载 + 预测 + 适配器加载，不含架构定义）
+├── app.py                      # Gradio 交互式演示
+├── app_spike.py                # 脉冲编码接口演示
+├── spike_interface.py          # 64 通道脉冲编码接口
 ├── demo_real_text.py           # 命令行推理演示
 ├── train_adapter.py            # 领域适配器训练脚本（冻结道体，只训练 LoRA）
 ├── train_physics_adapter.py    # 物理参数适配器训练脚本
 ├── eval_benchmark.py           # 基准测试脚本
-├── build_tokenizer.py          # 分词器构建脚本
+├── build_tokenizer.py          # 分词器构建脚本（推理用，非训练分词器）
+├── check_training_leak.py      # 训练逻辑泄露检测工具
 ├── yijing_v53_daoti.pt         # 模型权重文件
 ├── yijing_v53_daoti.pt.sha256  # SHA256 校验文件
 ├── yijing_v53_config.json      # 模型配置参数
-├── daoti_v53_tokenizer.pt      # 分词器（探针+BPE+精炼，三阶段优化）
+├── daoti_v53_tokenizer.pt      # 分词器
 ├── requirements.txt            # Python 依赖
-├── 白皮书_道体基座技术.md       # 技术白皮书
-├── papers/                     # 6 篇研究论文
-├── ADAPTER_TRAINING.md         # 适配器训练详细文档
-├── PHYSICS_ADAPTER.md          # 物理适配器详细文档
-├── BENCHMARK.md                # 基准测试详细文档
+├── README.md / README_EN.md    # 中/英文说明
 ├── CONTRIBUTING.md             # 贡献指南
 ├── LICENSE                     # 模型权重许可证（DaoTi Research License v1.0）
-└── LICENSE_CODE                # 代码许可证（Apache 2.0）
+├── LICENSE_CODE                # 代码许可证（Apache 2.0）
+├── docs/                       # 📁 文档
+│   ├── 白皮书_道体基座技术.md
+│   ├── API_REFERENCE.md
+│   ├── ADAPTER_TRAINING.md
+│   ├── PHYSICS_ADAPTER.md
+│   ├── BENCHMARK.md
+│   └── papers/                 # 6 篇研究论文
+├── benchmarks/                 # 📁 基准测试数据
+│   ├── benchmark_results.json
+│   └── benchmark_results_real_text.json
+└── .github/workflows/          # CI（lint + 依赖扫描 + 训练泄露检测）
 ```
 
 ## 道体模型是什么
@@ -390,7 +400,7 @@ model = load_adapter(model, 'optics_adapter.pt')
 - **适配器权重独立存储**：输出 `.pt` 文件仅包含 LoRA 参数，不包含道体核心
 - **可随时卸载**：重新加载原始模型即可恢复无适配器状态
 
-详细说明见 [ADAPTER_TRAINING.md](ADAPTER_TRAINING.md)。
+详细说明见 [ADAPTER_TRAINING.md](docs/ADAPTER_TRAINING.md)。
 
 ## 物理参数适配器
 
@@ -438,7 +448,7 @@ print(result['spectrum'])
 | 输入编码器 (MLP) | ~50K | ✅ 训练 |
 | 回归输出头 (MLP) | ~100K | ✅ 训练 |
 
-详细说明见 [PHYSICS_ADAPTER.md](PHYSICS_ADAPTER.md)。
+详细说明见 [PHYSICS_ADAPTER.md](docs/PHYSICS_ADAPTER.md)。
 
 ## 基准测试
 
@@ -446,7 +456,7 @@ print(result['spectrum'])
 python eval_benchmark.py
 ```
 
-输出 `benchmark_results.json`，包含：八宫分类准确率、64 卦原型检索 top-1/top-5 准确率、相干性分布统计、随机基线对比。详见 [BENCHMARK.md](BENCHMARK.md)。
+输出 `benchmark_results.json`，包含：八宫分类准确率、64 卦原型检索 top-1/top-5 准确率、相干性分布统计、随机基线对比。详见 [BENCHMARK.md](docs/BENCHMARK.md)。
 
 ## 保护策略
 

@@ -4,7 +4,7 @@
 >
 > **Core Design**: The DaoTi foundation is permanently frozen. New knowledge is learned exclusively through lightweight adapters. **This project does not provide base model training code, nor does it accept requests to modify base weights.**
 
-**🚀 [Live Demo](https://modelscope.cn/studios/spring30/daoti-v53-spike)** | **📖 [Papers](papers/)** | **📄 [Whitepaper](白皮书_道体基座技术.md)** | **💬 [Discussions](https://github.com/zhibaiYingChuan/DaoTi/issues)**
+**🚀 [Live Demo](https://modelscope.cn/studios/spring30/daoti-v53-spike)** | **📖 [Papers](papers/)** | **📄 [Whitepaper](docs/白皮书_道体基座技术.md)** | **💬 [Discussions](https://github.com/zhibaiYingChuan/DaoTi/issues)**
 
 [中文文档](README.md)
 
@@ -48,7 +48,7 @@ response = generate_response(model, text_ids, gua_idx=0)
 
 ## API Reference
 
-See [API_REFERENCE.md](API_REFERENCE.md) for complete function documentation.
+See [API_REFERENCE.md](docs/API_REFERENCE.md) for complete function documentation.
 
 ## License
 
