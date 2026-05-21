@@ -109,12 +109,7 @@ def _load_optimized_char_map():
         _TOKENIZER_PT = torch.load(pt_path, map_location='cpu', weights_only=False)
         _OPTIMIZED_CHAR_MAP = _TOKENIZER_PT.get('char_to_id', {})
         return _OPTIMIZED_CHAR_MAP
-    map_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "optimized_tokenizer.json")
-    if os.path.exists(map_path):
-        with open(map_path, "r", encoding="utf-8") as f:
-            _OPTIMIZED_CHAR_MAP = json.load(f)
-    else:
-        _OPTIMIZED_CHAR_MAP = {}
+    _OPTIMIZED_CHAR_MAP = {}
     return _OPTIMIZED_CHAR_MAP
 
 def simple_chinese_tokenize(text, vocab_size=8145, max_seq=256):
