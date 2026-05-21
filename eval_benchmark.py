@@ -98,10 +98,16 @@ GUA_REAL_TEXTS = [
 ]
 
 _OPTIMIZED_CHAR_MAP = None
+_TOKENIZER_PT = None
 
 def _load_optimized_char_map():
-    global _OPTIMIZED_CHAR_MAP
+    global _OPTIMIZED_CHAR_MAP, _TOKENIZER_PT
     if _OPTIMIZED_CHAR_MAP is not None:
+        return _OPTIMIZED_CHAR_MAP
+    pt_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "daoti_v53_tokenizer.pt")
+    if os.path.exists(pt_path):
+        _TOKENIZER_PT = torch.load(pt_path, map_location='cpu', weights_only=False)
+        _OPTIMIZED_CHAR_MAP = _TOKENIZER_PT.get('char_to_id', {})
         return _OPTIMIZED_CHAR_MAP
     map_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "optimized_tokenizer.json")
     if os.path.exists(map_path):
