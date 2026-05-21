@@ -2,7 +2,11 @@
 
 > **算力不是门槛。结构性增效，而非规模堆积。**
 
-**🚀 [在线演示](https://huggingface.co/spaces/zhibaiYingChuan/daoti-v53)** | **📖 [论文](papers/)** | **📄 [白皮书](白皮书_道体基座技术.md)** | **💬 [讨论](https://github.com/zhibaiYingChuan/DaoTi/issues)**
+> **License** · Code: [Apache 2.0](LICENSE_CODE) · Model Weights: [DaoTi Research License v1.0](LICENSE) (no reverse-engineering, no redistribution)
+>
+> **核心设计**：道体基座永久冻结，仅通过轻量适配器学习新知识。**本项目不提供基座训练代码，也不接受对基座权重的修改请求。**
+
+**🚀 [在线演示](https://modelscope.cn/studios/spring30/daoti-v53-spike)** | **📖 [论文](papers/)** | **📄 [白皮书](白皮书_道体基座技术.md)** | **💬 [讨论](https://github.com/zhibaiYingChuan/DaoTi/issues)**
 
 道体基座（DaoTi V53 Foundation）是一个预训练的神经网络**语义基座模型**。它以中文自然语言文本为输入，输出结构化语义表征——包括编码空间中的语义向量、洛书空间中的状态向量，以及64维结构化原型向量（卦象空间）。
 
@@ -484,8 +488,11 @@ python eval_benchmark.py
 | **代码**（inference.py, app.py, train_adapter.py 等） | **Apache 2.0** | [LICENSE_CODE](LICENSE_CODE) |
 | **模型权重**（yijing_v53_daoti.pt） | **DaoTi Research License v1.0** | [LICENSE](LICENSE) |
 
-Apache 2.0 允许商业使用和修改，但必须保留版权声明，并明确授予专利使用权。
-模型权重继续使用自定义协议，限制商业再分发和滥用。
+- **Apache 2.0**：允许商业使用和修改，但必须保留版权声明，并明确授予专利使用权。
+- **DaoTi Research License v1.0**：允许推理使用，但**禁止**以下行为：
+  - 对模型权重进行逆向工程以提取训练方法
+  - 使用权重训练或蒸馏竞争模型
+  - 将模型权重作为独立产品再分发或转售
 
 架构源码、训练代码等核心工艺不在此仓库中，需另行授权。详见 [LICENSE](LICENSE)。
 

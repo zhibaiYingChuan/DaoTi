@@ -1,6 +1,6 @@
 """
-DaoTi V53 — Model Architecture
-================================
+DaoTi V53 — Model Architecture (Inference Build)
+==================================================
 Copyright (c) 2025 DaoTi Research. All rights reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,6 +20,11 @@ The model weights and architecture code provided herein are intended for
 research and non-commercial use only. Commercial use, redistribution of
 model weights, and reverse engineering of the training methodology are
 strictly prohibited without explicit written permission.
+
+NOTE: This file defines the model structure for inference only. All
+hyperparameters are loaded from the saved model state_dict at runtime.
+The default values below are placeholders and do not reflect the actual
+training configuration.
 """
 
 import torch
@@ -32,9 +37,19 @@ from _constants import (
     WUXING_SHENGKE_MATRIX, LIUQIN_MAP,
 )
 
+_DROPOUT_TEXT = 0.1
+_DROPOUT_CORE = 0.2
+_DROPOUT_PHYSICS = 0.1
+_INTER_STEP_DROPOUT = 0.1
+_LAYER_DROPOUT_SCALE = 0.5
+_ENCODER_DROPOUT_SCALE = 0.8
+_LORA_RANK = 8
+_LORA_ALPHA = 0.1
+_INIT_STD = 0.02
+
 
 class _SeqEncoder(nn.Module):
-    def __init__(self, vocab_size=3000, embed_dim=64, hidden_dim=128, num_heads=4, num_layers=2, max_seq=256, dropout=0.1):
+    def __init__(self, vocab_size=3000, embed_dim=64, hidden_dim=128, num_heads=4, num_layers=2, max_seq=256, dropout=_DROPOUT_TEXT):
         super().__init__()
         self.token_embed = nn.Embedding(vocab_size, embed_dim, padding_idx=0)
         self.pos_embed = nn.Embedding(max_seq, embed_dim)
@@ -69,7 +84,7 @@ class _MaskedHead(nn.Module):
 
 
 class CellBlock(nn.Module):
-    def __init__(self, state_dim, hidden_dim, gua_embed_dim=32, dropout=0.2):
+    def __init__(self, state_dim, hidden_dim, gua_embed_dim=32, dropout=_DROPOUT_CORE):
         super().__init__()
         self.gua_embed_dim = gua_embed_dim
         self.gua_position_embed = nn.Embedding(64, gua_embed_dim)
@@ -93,7 +108,7 @@ class CellBlock(nn.Module):
         )
         self.forward_gate = nn.Linear(state_dim * 2 + combined_dim, state_dim)
         self.backward_gate = nn.Linear(state_dim * 2 + combined_dim, state_dim)
-        self.layer_dropout = nn.Dropout(dropout * 0.5)
+        self.layer_dropout = nn.Dropout(dropout * _LAYER_DROPOUT_SCALE)
 
     def forward(self, state, gua_idx):
         gua_vec = self.gua_position_embed(gua_idx)
@@ -112,7 +127,7 @@ class CellBlock(nn.Module):
 
 
 class CoreEngine(nn.Module):
-    def __init__(self, input_dim=196, state_dim=176, hidden_dim=320, num_layers=6, T=7, dropout=0.2, gua_embed_dim=32):
+    def __init__(self, input_dim=196, state_dim=176, hidden_dim=320, num_layers=6, T=7, dropout=_DROPOUT_CORE, gua_embed_dim=32):
         super().__init__()
         self.state_dim = state_dim
         self.hidden_dim = hidden_dim
@@ -120,15 +135,15 @@ class CoreEngine(nn.Module):
         self.T = T
         self.input_encoder = nn.Sequential(
             nn.Linear(input_dim, hidden_dim), nn.LayerNorm(hidden_dim), nn.GELU(), nn.Dropout(dropout),
-            nn.Linear(hidden_dim, state_dim), nn.LayerNorm(state_dim), nn.Dropout(dropout * 0.8),
-        )
+            nn.Linear(hidden_dim, state_dim), nn.LayerNorm(state_dim), nn.Dropout(dropout * _ENCODER_DROPOUT_SCALE),
+        ])
         self.ladder_layers = nn.ModuleList([
             CellBlock(state_dim, hidden_dim, gua_embed_dim=gua_embed_dim, dropout=dropout)
             for _ in range(num_layers)
         ])
         self.output_decoder = nn.Sequential(
             nn.Linear(state_dim, hidden_dim), nn.GELU(), nn.Dropout(dropout),
-            nn.Linear(hidden_dim, state_dim), nn.LayerNorm(state_dim), nn.Dropout(dropout * 0.8),
+            nn.Linear(hidden_dim, state_dim), nn.LayerNorm(state_dim), nn.Dropout(dropout * _ENCODER_DROPOUT_SCALE),
         )
         self.multihead_attn = nn.MultiheadAttention(embed_dim=state_dim, num_heads=8, dropout=dropout, batch_first=True)
         self.norm = nn.LayerNorm(state_dim)
@@ -141,7 +156,7 @@ class CoreEngine(nn.Module):
                 forward_state, backward_state = layer(state, gua_idx)
                 new_state = new_state + (forward_state + backward_state) / 2.0
             if t < self.T - 1:
-                new_state = F.dropout(new_state, p=0.1, training=self.training)
+                new_state = F.dropout(new_state, p=_INTER_STEP_DROPOUT, training=self.training)
             state = new_state / self.num_layers
         attn_out, _ = self.multihead_attn(state.unsqueeze(1), state.unsqueeze(1), state.unsqueeze(1))
         output = self.output_decoder(attn_out.squeeze(1))
@@ -152,7 +167,7 @@ class CoreEngine(nn.Module):
 
 
 class RuleModule(nn.Module):
-    def __init__(self, h=176, dropout=0.2):
+    def __init__(self, h=176, dropout=_DROPOUT_CORE):
         super().__init__()
         half_h = h // 2
         self.palace_wuxing_fc = nn.Linear(h, 5)
@@ -180,7 +195,7 @@ class RuleModule(nn.Module):
 
 
 class TaskHead(nn.Module):
-    def __init__(self, h=176, dropout=0.2, lora_rank=8, lora_alpha=0.1, enable_lora=True):
+    def __init__(self, h=176, dropout=_DROPOUT_CORE, lora_rank=_LORA_RANK, lora_alpha=_LORA_ALPHA, enable_lora=True):
         super().__init__()
         self.h = h
         self.enable_lora = enable_lora
@@ -189,7 +204,7 @@ class TaskHead(nn.Module):
         self.shared_fc = nn.Sequential(
             nn.Linear(h, h), nn.GELU(), nn.Dropout(dropout), nn.LayerNorm(h),
         )
-        self.semantic_prototypes = nn.Parameter(torch.randn(8, half_h) * 0.02)
+        self.semantic_prototypes = nn.Parameter(torch.randn(8, half_h) * _INIT_STD)
         self.classify_q = nn.Linear(h, half_h)
         self.classify_attn = nn.MultiheadAttention(embed_dim=half_h, num_heads=4, dropout=dropout, batch_first=True)
         self.wuxing_shengke = RuleModule(h, dropout)
@@ -210,7 +225,7 @@ class TaskHead(nn.Module):
                 for name in ['traditional', 'meihua', 'liuyao']
             })
             for m in ['traditional', 'meihua', 'liuyao']:
-                nn.init.normal_(self.lora_A[m].weight, std=0.02)
+                nn.init.normal_(self.lora_A[m].weight, std=_INIT_STD)
                 nn.init.zeros_(self.lora_B[m].weight)
 
     def forward(self, x, method_name='traditional'):
@@ -240,8 +255,8 @@ class TaskHead(nn.Module):
 
 class YiJingV53Foundation(nn.Module):
     def __init__(self, vocab_size=3000, text_dim=128, state_dim=176, hidden_dim=320,
-                 ladder_layers=6, T=7, num_heads=8, dropout=0.2,
-                 lora_rank=8, lora_alpha=0.1, enable_lora=True, gua_embed_dim=32):
+                 ladder_layers=6, T=7, num_heads=8, dropout=_DROPOUT_CORE,
+                 lora_rank=_LORA_RANK, lora_alpha=_LORA_ALPHA, enable_lora=True, gua_embed_dim=32):
         super().__init__()
         self.state_dim = state_dim
         self.text_encoder = _SeqEncoder(
@@ -251,7 +266,7 @@ class YiJingV53Foundation(nn.Module):
         self.method_embed = nn.Embedding(3, 20)
         self.text_proj = nn.Linear(text_dim, state_dim)
         self.gua_prototype = nn.Embedding(64, state_dim)
-        nn.init.normal_(self.gua_prototype.weight, std=0.02)
+        nn.init.normal_(self.gua_prototype.weight, std=_INIT_STD)
         self.text_gate = nn.Sequential(nn.Linear(state_dim * 2, state_dim), nn.Sigmoid())
         self.heluo_ladder = CoreEngine(
             input_dim=state_dim + 20, state_dim=state_dim, hidden_dim=hidden_dim,
@@ -295,7 +310,7 @@ class YiJingV53Foundation(nn.Module):
 
 
 class PhysicsInputEncoder(nn.Module):
-    def __init__(self, input_dim, state_dim=176, hidden_dim=128, dropout=0.1):
+    def __init__(self, input_dim, state_dim=176, hidden_dim=128, dropout=_DROPOUT_PHYSICS):
         super().__init__()
         self.encoder = nn.Sequential(
             nn.Linear(input_dim, hidden_dim), nn.GELU(), nn.LayerNorm(hidden_dim), nn.Dropout(dropout),
@@ -308,7 +323,7 @@ class PhysicsInputEncoder(nn.Module):
 
 
 class SpectrumRegressionHead(nn.Module):
-    def __init__(self, state_dim=176, output_dim=100, hidden_dim=256, dropout=0.1):
+    def __init__(self, state_dim=176, output_dim=100, hidden_dim=256, dropout=_DROPOUT_PHYSICS):
         super().__init__()
         self.regressor = nn.Sequential(
             nn.Linear(state_dim, hidden_dim), nn.GELU(), nn.Dropout(dropout),

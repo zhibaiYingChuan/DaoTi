@@ -1,12 +1,16 @@
 """
 DaoTi V53 Tokenizer Builder
 =============================
-Builds daoti_v53_tokenizer.pt — a standalone tokenizer that closes the gap
-between probe-based character mapping (34.4%) and the native training tokenizer (71.9%).
+Builds daoti_v53_tokenizer.pt — a standalone tokenizer for inference use only.
+
+This script extracts character-level and BPE mappings from the already-trained
+model weights. It does NOT replicate the original training tokenizer's build
+process. The resulting tokenizer is designed solely for feeding text into the
+inference pipeline.
 
 Strategy:
-  Phase 1: Probe all active tokens, build character-level mapping (V3 baseline)
-  Phase 2: BPE merge training on hexagram corpus
+  Phase 1: Probe active tokens from model embedding weights, build character-level mapping
+  Phase 2: BPE merge on hexagram corpus (inference-time optimization)
   Phase 3: Map BPE tokens to model vocabulary
   Phase 4: Greedy per-character refinement
   Phase 5: Save as daoti_v53_tokenizer.pt
@@ -395,7 +399,7 @@ def main():
     print(f"  Updated optimized_tokenizer.json")
 
     print(f"\n{'='*60}")
-    print(f"  RESULT: Top-1={100*t1f/64:.1f}%  (baseline: 34.4%, white paper: 71.9%)")
+    print(f"  RESULT: Top-1={100*t1f/64:.1f}%  Top-5={100*t5f/64:.1f}%")
     print(f"{'='*60}")
 
 
