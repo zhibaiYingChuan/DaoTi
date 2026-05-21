@@ -2,6 +2,8 @@ import re
 import sys
 import os
 
+sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+
 FORBIDDEN_PATTERNS = [
     re.compile(r'nn\.CrossEntropyLoss'),
     re.compile(r'nn\.MSELoss'),
@@ -22,6 +24,12 @@ EXCLUDE_FILES = {
     'train_physics_adapter.py',
     '_create_release.py',
     'check_training_leak.py',
+    'eval_benchmark.py',
+    'build_tokenizer.py',
+    'app.py',
+    'app_spike.py',
+    'demo_real_text.py',
+    'spike_interface.py',
 }
 
 def check_file(filepath):
@@ -52,7 +60,7 @@ def main():
             all_findings.extend(check_file(path))
 
     if all_findings:
-        print("⚠️  Potential training logic detected in the following files:")
+        print("[WARNING] Potential training logic detected in the following files:")
         print("    (If this is intentional, add the filename to EXCLUDE_FILES)")
         print()
         for filepath, lineno, line in all_findings:
