@@ -1,3 +1,23 @@
+"""
+DaoTi V53 Foundation Model — Inference Interface
+==================================================
+道体基座推理接口（公开发布版）。
+
+公开接口:
+  - load_daoti()         加载模型
+  - predict()            执行推理
+  - generate_response()  生成自然语言回答
+  - compute_coherence()  计算相干性
+  - verify_sha256()      校验权重完整性
+  - load_adapter()       加载领域适配器
+  - load_physics_adapter()  加载物理适配器
+  - predict_physics()    物理参数预测
+
+常量与数据:
+  - GUA_64, BA_GONG, GUA_WUXING, GUA_TRIGRAM 等
+  - sparse_expand_input(), find_palace() 等工具函数
+"""
+
 import math
 import torch
 import torch.nn as nn
@@ -7,395 +27,13 @@ from typing import Optional
 import os
 import hashlib
 
-MAX_SEQ = 256
-STATE_DIM = 176
-TEXT_DIM = 128
+from _constants import *
 
-GUA_64 = [
-    "乾","坤","屯","蒙","需","讼","师","比","小畜","履","泰","否",
-    "同人","大有","谦","豫","随","蛊","临","观","噬嗑","贲","剥","复",
-    "无妄","大畜","颐","大过","坎","离","咸","恒","遁","大壮","晋","明夷",
-    "家人","睽","蹇","解","损","益","夬","姤","萃","升","困","井",
-    "革","鼎","震","艮","渐","归妹","丰","旅","巽","兑","涣","节",
-    "中孚","小过","既济","未济",
-]
 
-BA_GONG = {
-    "乾宫":["乾","姤","遁","否","观","剥","晋","大有"],
-    "坤宫":["坤","复","临","泰","大壮","夬","需","比"],
-    "震宫":["震","豫","解","恒","升","井","大过","随"],
-    "巽宫":["巽","小畜","家人","益","无妄","噬嗑","颐","蛊"],
-    "坎宫":["坎","节","屯","既济","革","丰","明夷","师"],
-    "离宫":["离","旅","鼎","未济","蒙","涣","讼","同人"],
-    "艮宫":["艮","贲","大畜","损","睽","履","中孚","渐"],
-    "兑宫":["兑","困","萃","咸","蹇","谦","小过","归妹"],
-}
+def _get_model_class():
+    from _model_core import YiJingV53Foundation
+    return YiJingV53Foundation
 
-GUA_WUXING = {"乾":"金","兑":"金","坤":"土","艮":"土","震":"木","巽":"木","坎":"水","离":"火"}
-
-XIAN_TIAN_MAP = {
-    0:0,1:7,2:4,3:6,4:5,5:0,6:5,7:7,8:1,9:1,10:7,11:0,12:2,13:0,14:6,15:4,
-    16:3,17:5,18:7,19:5,20:2,21:2,22:6,23:4,24:0,25:6,26:3,27:1,28:5,29:2,30:6,31:3,
-    32:5,33:0,34:2,35:2,36:5,37:1,38:8,39:5,40:6,41:4,42:0,43:5,44:6,45:4,46:6,47:5,
-    48:2,49:5,50:3,51:6,52:5,53:1,54:2,55:8,56:5,57:1,58:3,59:0,60:6,61:8,62:0,63:9,
-}
-
-HOU_TIAN_MAP = {
-    0:5,1:1,2:2,3:8,4:0,5:5,6:0,7:1,8:3,9:6,10:1,11:5,12:9,13:5,14:8,15:2,
-    16:2,17:3,18:1,19:3,20:9,21:9,22:8,23:2,24:5,25:8,26:2,27:6,28:0,29:9,30:6,31:8,
-    32:3,33:5,34:9,35:9,36:3,37:6,38:8,39:0,40:8,41:3,42:5,43:3,44:6,45:3,46:6,47:3,
-    48:9,49:3,50:2,51:8,52:3,53:6,54:9,55:8,56:3,57:6,58:3,59:0,60:6,61:8,62:0,63:9,
-}
-
-GUA_TRIGRAM = {
-    0:("乾","乾"),1:("坤","坤"),2:("坎","震"),3:("艮","坎"),4:("坎","乾"),5:("乾","坎"),
-    6:("坤","坎"),7:("坤","坎"),8:("巽","乾"),9:("乾","兑"),10:("坤","乾"),11:("乾","坤"),
-    12:("乾","离"),13:("离","乾"),14:("艮","坤"),15:("坤","震"),16:("兑","震"),17:("艮","巽"),
-    18:("坤","兑"),19:("坤","巽"),20:("离","震"),21:("艮","离"),22:("艮","坤"),23:("坤","震"),
-    24:("乾","震"),25:("艮","乾"),26:("艮","震"),27:("兑","巽"),28:("坎","坎"),29:("离","离"),
-    30:("兑","艮"),31:("震","巽"),32:("巽","乾"),33:("震","乾"),34:("离","坤"),35:("坤","离"),
-    36:("巽","离"),37:("离","兑"),38:("坎","艮"),39:("震","坎"),40:("艮","兑"),41:("巽","震"),
-    42:("乾","兑"),43:("乾","巽"),44:("兑","坤"),45:("坤","巽"),46:("兑","坎"),47:("巽","坎"),
-    48:("兑","离"),49:("离","巽"),50:("震","震"),51:("艮","艮"),52:("艮","巽"),53:("震","兑"),
-    54:("离","震"),55:("离","艮"),56:("巽","巽"),57:("兑","兑"),58:("巽","坎"),59:("坎","兑"),
-    60:("巽","兑"),61:("艮","震"),62:("坎","离"),63:("离","坎"),
-}
-
-WUXING_IDX = {"金":0,"木":1,"水":2,"火":3,"土":4}
-LIUQIN_MAP = {"父母":0,"兄弟":1,"子孙":2,"妻财":3,"官鬼":4,"空亡":5}
-PALACE_MAP = {"乾宫":0,"坤宫":1,"震宫":2,"巽宫":3,"坎宫":4,"离宫":5,"艮宫":6,"兑宫":7}
-METHOD_MAP = {"周易":0,"六爻":1,"梅花":2}
-BAGUA_NAMES = ["乾","坤","震","巽","坎","离","艮","兑"]
-WUXING_NAMES = ["木","火","土","金","水"]
-WUXING_SHENG = {"木":"火","火":"土","土":"金","金":"水","水":"木"}
-WUXING_KE = {"木":"土","火":"金","土":"水","金":"木","水":"火"}
-
-def _build_wuxing_shengke_matrix():
-    def _get_liuqin(p,n):
-        if p==n: return "兄弟"
-        if (p,n) in [("木","水"),("火","木"),("土","火"),("金","土"),("水","金")]: return "子孙"
-        if (p,n) in [("木","金"),("火","木"),("土","水"),("金","火"),("水","土")]: return "官鬼"
-        if (p,n) in [("木","土"),("火","金"),("土","木"),("金","水"),("水","火")]: return "妻财"
-        return "父母"
-    matrix = np.zeros((5,5,6), dtype=np.float32)
-    for pi, pn in enumerate(["金","木","水","火","土"]):
-        for ni, nn_wx in enumerate(["金","木","水","火","土"]):
-            lq = _get_liuqin(pn, nn_wx)
-            matrix[pi, ni, LIUQIN_MAP[lq]] = 1.0
-    return matrix
-
-WUXING_SHENGKE_MATRIX = _build_wuxing_shengke_matrix()
-
-KNOWLEDGE_BASE = {
-    "乾宫": {
-        "卦象": "乾为天", "五行": "金", "方位": "西北",
-        "象义": "刚健中正，自强不息",
-        "关键词": ["领导","事业","刚健","进取","决断","权威","父亲","君王"],
-        "解读": "乾卦象征天，代表刚健、创造、领导力。占得此卦，宜积极进取，把握时机，但需防过刚则折。",
-        "经典": "天行健，君子以自强不息。《周易·乾卦·象传》",
-    },
-    "坤宫": {
-        "卦象": "坤为地", "五行": "土", "方位": "西南",
-        "象义": "厚德载物，柔顺包容",
-        "关键词": ["包容","柔顺","承载","耐心","母亲","土地","养育"],
-        "解读": "坤卦象征地，代表包容、承载、柔顺。占得此卦，宜顺势而为，厚积薄发，不宜冒进。",
-        "经典": "地势坤，君子以厚德载物。《周易·坤卦·象传》",
-    },
-    "震宫": {
-        "卦象": "震为雷", "五行": "木", "方位": "东",
-        "象义": "奋发激荡，行动变革",
-        "关键词": ["行动","变革","震动","启动","长子","雷","突发"],
-        "解读": "震卦象征雷，代表行动、变革、振奋。占得此卦，宜果断行动，但需防冲动冒进。",
-        "经典": "洊雷，震，君子以恐惧修省。《周易·震卦·象传》",
-    },
-    "巽宫": {
-        "卦象": "巽为风", "五行": "木", "方位": "东南",
-        "象义": "随风顺入，柔渗透达",
-        "关键词": ["渗透","柔顺","传播","风","长女","沟通","渐进"],
-        "解读": "巽卦象征风，代表渗透、柔顺、传播。占得此卦，宜以柔克刚，循序渐进。",
-        "经典": "随风，巽，君子以申命行事。《周易·巽卦·象传》",
-    },
-    "坎宫": {
-        "卦象": "坎为水", "五行": "水", "方位": "北",
-        "象义": "险陷重重，守正待时",
-        "关键词": ["险阻","困难","水","深渊","中男","智慧","沉潜"],
-        "解读": "坎卦象征水，代表险阻、困难、智慧。占得此卦，宜守正待时，以智破险。",
-        "经典": "水洊至，习坎，君子以常德行，习教事。《周易·坎卦·象传》",
-    },
-    "离宫": {
-        "卦象": "离为火", "五行": "火", "方位": "南",
-        "象义": "光明附丽，文采照临",
-        "关键词": ["光明","文明","火","中女","附丽","文化","洞察"],
-        "解读": "离卦象征火，代表光明、文明、洞察。占得此卦，宜明辨是非，以文会友。",
-        "经典": "明两作，离，大人以继明照于四方。《周易·离卦·象传》",
-    },
-    "艮宫": {
-        "卦象": "艮为山", "五行": "土", "方位": "东北",
-        "象义": "止而不动，安守本分",
-        "关键词": ["停止","安稳","山","少男","守成","静止","反思"],
-        "解读": "艮卦象征山，代表停止、安稳、守成。占得此卦，宜知止而止，安守本分。",
-        "经典": "兼山，艮，君子以思不出其位。《周易·艮卦·象传》",
-    },
-    "兑宫": {
-        "卦象": "兑为泽", "五行": "金", "方位": "西",
-        "象义": "喜悦和乐，口舌言语",
-        "关键词": ["喜悦","交流","泽","少女","口舌","和悦","交际"],
-        "解读": "兑卦象征泽，代表喜悦、交流、和乐。占得此卦，宜和悦待人，但需防口舌是非。",
-        "经典": "丽泽，兑，君子以朋友讲习。《周易·兑卦·象传》",
-    },
-}
-
-LIUQIN_KNOWLEDGE = {
-    "父母": {"象义": "庇护、文书、长辈", "解读": "父母爻主庇护、文书、长辈之事。占事业主文书合同，占健康主长辈之疾。"},
-    "兄弟": {"象义": "竞争、同辈、劫财", "解读": "兄弟爻主竞争、同辈、劫财。占财运主破耗，占事业主同侪竞争。"},
-    "子孙": {"象义": "福神、子嗣、解忧", "解读": "子孙爻为福神，主子嗣、解忧、制鬼。占病主愈，占讼主散。"},
-    "妻财": {"象义": "财利、妻室、粮食", "解读": "妻财爻主财利、妻室、粮食。占财运主得财，占婚姻主妻室。"},
-    "官鬼": {"象义": "官府、鬼祟、疾病", "解读": "官鬼爻主官府、鬼祟、疾病。占功名主得官，占病主疾厄。"},
-    "空亡": {"象义": "虚空、无力、不成", "解读": "空亡主虚空、无力、不成。占事主落空，占忧事反吉。"},
-}
-
-LIUSHEN_KNOWLEDGE = {
-    "青龙": {"象义": "喜庆、吉祥、财富", "解读": "青龙主喜庆吉祥，临财爻主进财，临官爻主升迁。"},
-    "朱雀": {"象义": "口舌、文书、是非", "解读": "朱雀主口舌是非，临官爻主官非，临兄爻主争吵。"},
-    "勾陈": {"象义": "田土、迟滞、牵连", "解读": "勾陈主田土迟滞，占事主拖延，占病主慢性。"},
-    "螣蛇": {"象义": "惊恐、怪异、虚惊", "解读": "螣蛇主惊恐怪异，占病主精神不安，占事主虚惊。"},
-    "白虎": {"象义": "血光、丧服、凶险", "解读": "白虎主血光凶险，占病主重疾，临官鬼主丧事。"},
-    "玄武": {"象义": "暗昧、盗贼、私情", "解读": "玄武主暗昧盗贼，占财主暗损，占事主私弊。"},
-}
-
-WANGXIANG_KNOWLEDGE = {
-    "旺": "当令得时，力量最强",
-    "相": "得令之生，力量次强",
-    "休": "生令之气，力量减弱",
-    "囚": "克令之气，力量很弱",
-    "死": "被令所克，力量最弱",
-}
-
-def find_palace(g):
-    for p, gs in BA_GONG.items():
-        if g in gs: return p
-    return "乾宫"
-
-GUA_64_DETAIL = {}
-for _gi, _gn in enumerate(GUA_64):
-    _palace = find_palace(_gn)
-    _upper, _lower = GUA_TRIGRAM.get(_gi, ("乾","乾"))
-    GUA_64_DETAIL[_gn] = {
-        "序号": _gi, "上下卦": f"{_upper}上{_lower}下", "所属宫": _palace,
-        "宫五行": GUA_WUXING.get(_upper, "金"),
-    }
-
-def gua_to_yao_bits(gi):
-    return [float((gi>>j)&1) for j in range(5,-1,-1)]
-
-def sparse_expand_input(gi, yp=0, yi=0, ri=0, si=0, mi=0):
-    x = np.zeros(STATE_DIM, dtype=np.float32)
-    for j in range(6): x[j] = float(((gi>>(5-j))&1)*2-1)
-    xt = XIAN_TIAN_MAP.get(gi,0)
-    if xt<8: x[6+xt]=1.0
-    ht = HOU_TIAN_MAP.get(gi,0)
-    if ht<9: x[14+ht]=1.0
-    upper_gua, lower_gua = GUA_TRIGRAM.get(gi,("乾","乾"))
-    gua_wuxing = GUA_WUXING.get(upper_gua,"金")
-    wx_idx = WUXING_IDX.get(gua_wuxing,0)
-    x[23+wx_idx]=1.0
-    palace = find_palace(GUA_64[gi])
-    palace_idx = PALACE_MAP.get(palace,0)
-    x[28+palace_idx]=1.0
-    return x
-
-class TextEncoder(nn.Module):
-    def __init__(self, vocab_size=3000, embed_dim=64, hidden_dim=128, num_heads=4, num_layers=2, max_seq=256, dropout=0.1):
-        super().__init__()
-        self.token_embed = nn.Embedding(vocab_size, embed_dim, padding_idx=0)
-        self.pos_embed = nn.Embedding(max_seq, embed_dim)
-        self.layer_norm = nn.LayerNorm(embed_dim)
-        encoder_layer = nn.TransformerEncoderLayer(d_model=embed_dim, nhead=num_heads, dim_feedforward=hidden_dim, dropout=dropout, activation='gelu', batch_first=True)
-        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
-        self.pool_proj = nn.Sequential(nn.Linear(embed_dim, hidden_dim), nn.GELU(), nn.LayerNorm(hidden_dim))
-
-    def forward(self, text_ids, mask=None):
-        B, L = text_ids.shape
-        positions = torch.arange(L, device=text_ids.device).unsqueeze(0).expand(B, L)
-        h = self.token_embed(text_ids) + self.pos_embed(positions)
-        h = self.layer_norm(h)
-        if mask is not None: h = h.masked_fill(mask.unsqueeze(-1)==0, 0.0)
-        h = self.transformer(h, src_key_padding_mask=(text_ids==0))
-        non_pad = (text_ids!=0).unsqueeze(-1).float()
-        h_pooled = (h*non_pad).sum(dim=1)/non_pad.sum(dim=1).clamp(min=1)
-        return self.pool_proj(h_pooled), h
-
-class MLMHead(nn.Module):
-    def __init__(self, hidden_dim=64, vocab_size=3000):
-        super().__init__()
-        self.fc = nn.Sequential(nn.Linear(hidden_dim, hidden_dim), nn.GELU(), nn.LayerNorm(hidden_dim), nn.Linear(hidden_dim, vocab_size))
-    def forward(self, hidden_states): return self.fc(hidden_states)
-
-class HeLuoLadderCell(nn.Module):
-    def __init__(self, state_dim, hidden_dim, gua_embed_dim=32, dropout=0.2):
-        super().__init__()
-        self.gua_embed_dim = gua_embed_dim
-        self.gua_position_embed = nn.Embedding(64, gua_embed_dim)
-        self.xiantian_embed = nn.Embedding(8, gua_embed_dim//2)
-        self.houtian_embed = nn.Embedding(9, gua_embed_dim//2)
-        xt_lut = torch.zeros(64, dtype=torch.long); ht_lut = torch.zeros(64, dtype=torch.long)
-        for i in range(64): xt_lut[i] = min(XIAN_TIAN_MAP.get(i,0), 7); ht_lut[i] = min(HOU_TIAN_MAP.get(i,0), 8)
-        self.register_buffer('xt_lut', xt_lut); self.register_buffer('ht_lut', ht_lut)
-        combined_dim = gua_embed_dim + gua_embed_dim//2 + gua_embed_dim//2
-        self.forward_net = nn.Sequential(nn.Linear(state_dim, hidden_dim), nn.Tanh(), nn.Dropout(dropout), nn.Linear(hidden_dim, state_dim))
-        self.backward_net = nn.Sequential(nn.Linear(state_dim, hidden_dim), nn.Tanh(), nn.Dropout(dropout), nn.Linear(hidden_dim, state_dim))
-        self.forward_gate = nn.Linear(state_dim*2+combined_dim, state_dim)
-        self.backward_gate = nn.Linear(state_dim*2+combined_dim, state_dim)
-        self.layer_dropout = nn.Dropout(dropout*0.5)
-
-    def forward(self, state, gua_idx):
-        gua_vec = self.gua_position_embed(gua_idx)
-        xt_vec = self.xiantian_embed(self.xt_lut[gua_idx])
-        ht_vec = self.houtian_embed(self.ht_lut[gua_idx])
-        direction_vec = torch.cat([gua_vec, xt_vec, ht_vec], dim=-1)
-        forward_pred = self.forward_net(state)
-        forward_gate_val = torch.sigmoid(self.forward_gate(torch.cat([state, forward_pred, direction_vec], dim=-1)))
-        forward_state = forward_gate_val*forward_pred + (1-forward_gate_val)*state
-        forward_state = self.layer_dropout(forward_state)
-        backward_pred = self.backward_net(state)
-        backward_gate_val = torch.sigmoid(self.backward_gate(torch.cat([state, backward_pred, direction_vec], dim=-1)))
-        backward_state = backward_gate_val*backward_pred + (1-backward_gate_val)*state
-        backward_state = self.layer_dropout(backward_state)
-        return forward_state, backward_state
-
-class HeLuoLadderNetwork(nn.Module):
-    def __init__(self, input_dim=196, state_dim=176, hidden_dim=320, num_layers=6, T=7, dropout=0.2, gua_embed_dim=32):
-        super().__init__()
-        self.state_dim = state_dim; self.hidden_dim = hidden_dim; self.num_layers = num_layers; self.T = T
-        self.input_encoder = nn.Sequential(nn.Linear(input_dim, hidden_dim), nn.LayerNorm(hidden_dim), nn.GELU(), nn.Dropout(dropout), nn.Linear(hidden_dim, state_dim), nn.LayerNorm(state_dim), nn.Dropout(dropout*0.8))
-        self.ladder_layers = nn.ModuleList([HeLuoLadderCell(state_dim, hidden_dim, gua_embed_dim=gua_embed_dim, dropout=dropout) for _ in range(num_layers)])
-        self.output_decoder = nn.Sequential(nn.Linear(state_dim, hidden_dim), nn.GELU(), nn.Dropout(dropout), nn.Linear(hidden_dim, state_dim), nn.LayerNorm(state_dim), nn.Dropout(dropout*0.8))
-        self.multihead_attn = nn.MultiheadAttention(embed_dim=state_dim, num_heads=8, dropout=dropout, batch_first=True)
-        self.norm = nn.LayerNorm(state_dim)
-
-    def forward(self, x, gua_idx, return_state=False):
-        state = self.input_encoder(x)
-        for t in range(self.T):
-            new_state = torch.zeros_like(state)
-            for layer in self.ladder_layers:
-                forward_state, backward_state = layer(state, gua_idx)
-                new_state = new_state + (forward_state+backward_state)/2.0
-            if t < self.T-1: new_state = F.dropout(new_state, p=0.1, training=self.training)
-            state = new_state/self.num_layers
-        attn_out, _ = self.multihead_attn(state.unsqueeze(1), state.unsqueeze(1), state.unsqueeze(1))
-        output = self.output_decoder(attn_out.squeeze(1))
-        output = self.norm(output)
-        if return_state: return output, state
-        return output
-
-class WuxingShengkeModule(nn.Module):
-    def __init__(self, h=176, dropout=0.2):
-        super().__init__()
-        half_h = h//2
-        self.palace_wuxing_fc = nn.Linear(h, 5); self.dizhi_wuxing_fc = nn.Linear(h, 5)
-        self.register_buffer('shengke_matrix', torch.from_numpy(WUXING_SHENGKE_MATRIX))
-        self.liuqin_residual = nn.Sequential(nn.Linear(h+6, half_h), nn.GELU(), nn.Dropout(dropout), nn.Linear(half_h, 6))
-        self.liushen_rizhi_fc = nn.Linear(h, 10)
-        self.liushen_residual = nn.Sequential(nn.Linear(h+6+10, half_h), nn.GELU(), nn.Dropout(dropout), nn.Linear(half_h, 6))
-
-    def forward(self, x):
-        palace_wx_logits = self.palace_wuxing_fc(x); dizhi_wx_logits = self.dizhi_wuxing_fc(x)
-        palace_wx = F.softmax(palace_wx_logits, dim=-1); dizhi_wx = F.softmax(dizhi_wx_logits, dim=-1)
-        rule_liuqin = torch.einsum('bp,pnk,bn->bk', palace_wx, self.shengke_matrix, dizhi_wx)
-        liuqin_res = self.liuqin_residual(torch.cat([x, rule_liuqin], dim=-1))
-        liuqin_out = rule_liuqin + liuqin_res
-        rizhi_logits = self.liushen_rizhi_fc(x)
-        liushen_res = self.liushen_residual(torch.cat([x, rule_liuqin, rizhi_logits], dim=-1))
-        return liuqin_out, liushen_res, palace_wx_logits, dizhi_wx_logits
-
-class OutputHeadV38(nn.Module):
-    def __init__(self, h=176, dropout=0.2, lora_rank=8, lora_alpha=0.1, enable_lora=True):
-        super().__init__()
-        self.h = h; self.enable_lora = enable_lora; self.lora_alpha = lora_alpha
-        half_h = h//2
-        self.shared_fc = nn.Sequential(nn.Linear(h, h), nn.GELU(), nn.Dropout(dropout), nn.LayerNorm(h))
-        self.semantic_prototypes = nn.Parameter(torch.randn(8, half_h)*0.02)
-        self.classify_q = nn.Linear(h, half_h)
-        self.classify_attn = nn.MultiheadAttention(embed_dim=half_h, num_heads=4, dropout=dropout, batch_first=True)
-        self.wuxing_shengke = WuxingShengkeModule(h, dropout)
-        self.palace = nn.Linear(h, 8); self.tiangan = nn.Linear(h, 10); self.dizhi = nn.Linear(h, 12)
-        self.wangxiang = nn.Linear(h+half_h, 5)
-        self.biangua_yao = nn.Sequential(nn.Linear(h, half_h), nn.GELU(), nn.Dropout(dropout), nn.Linear(half_h, 6))
-        if enable_lora:
-            self.lora_A = nn.ModuleDict({name: nn.Linear(h, lora_rank, bias=False) for name in ['traditional','meihua','liuyao']})
-            self.lora_B = nn.ModuleDict({name: nn.Linear(lora_rank, h, bias=False) for name in ['traditional','meihua','liuyao']})
-            for m in ['traditional','meihua','liuyao']: nn.init.normal_(self.lora_A[m].weight, std=0.02); nn.init.zeros_(self.lora_B[m].weight)
-
-    def forward(self, x, method_name='traditional'):
-        half_h = self.h//2
-        shared_features = self.shared_fc(x)
-        if self.enable_lora and method_name in self.lora_A:
-            lora_delta = self.lora_B[method_name](self.lora_A[method_name](shared_features))
-            shared_features = shared_features + self.lora_alpha*lora_delta
-        q = self.classify_q(shared_features).unsqueeze(1)
-        prototypes = self.semantic_prototypes.unsqueeze(0).expand(q.size(0), -1, -1)
-        classified, _ = self.classify_attn(q, prototypes, prototypes)
-        classified = classified.squeeze(1)
-        liuqin_out, liushen_out, palace_wx_logits, dizhi_wx_logits = self.wuxing_shengke(x)
-        standard_out = torch.cat([shared_features, classified], dim=-1)
-        return {'palace':self.palace(shared_features), 'tiangan':self.tiangan(shared_features), 'dizhi':self.dizhi(shared_features), 'liuqin':liuqin_out, 'liushen':liushen_out, 'wangxiang':self.wangxiang(standard_out), 'biangua_yao':self.biangua_yao(shared_features), 'palace_wuxing':palace_wx_logits, 'dizhi_wuxing':dizhi_wx_logits}
-
-class YiJingV53Foundation(nn.Module):
-    def __init__(self, vocab_size=3000, text_dim=128, state_dim=176, hidden_dim=320, ladder_layers=6, T=7, num_heads=8, dropout=0.2, lora_rank=8, lora_alpha=0.1, enable_lora=True, gua_embed_dim=32, moco_queue_size=4096, moco_momentum=0.999):
-        super().__init__()
-        self.state_dim = state_dim; self.moco_queue_size = moco_queue_size; self.moco_momentum = moco_momentum
-        self.text_encoder = TextEncoder(vocab_size=vocab_size, embed_dim=64, hidden_dim=text_dim, num_heads=4, num_layers=2, max_seq=MAX_SEQ, dropout=dropout)
-        self.momentum_text_encoder = TextEncoder(vocab_size=vocab_size, embed_dim=64, hidden_dim=text_dim, num_heads=4, num_layers=2, max_seq=MAX_SEQ, dropout=dropout)
-        for param in self.momentum_text_encoder.parameters(): param.requires_grad = False
-        self.method_embed = nn.Embedding(3, 20)
-        self.text_proj = nn.Linear(text_dim, state_dim); self.momentum_text_proj = nn.Linear(text_dim, state_dim)
-        for param in self.momentum_text_proj.parameters(): param.requires_grad = False
-        self.gua_prototype = nn.Embedding(64, state_dim); nn.init.normal_(self.gua_prototype.weight, std=0.02)
-        self.text_gate = nn.Sequential(nn.Linear(state_dim*2, state_dim), nn.Sigmoid())
-        self.heluo_ladder = HeLuoLadderNetwork(input_dim=state_dim+20, state_dim=state_dim, hidden_dim=hidden_dim, num_layers=ladder_layers, T=T, dropout=dropout, gua_embed_dim=gua_embed_dim)
-        self.head_traditional = OutputHeadV38(state_dim, dropout=dropout, lora_rank=lora_rank, lora_alpha=lora_alpha, enable_lora=enable_lora)
-        self.head_meihua = OutputHeadV38(state_dim, dropout=dropout, lora_rank=lora_rank, lora_alpha=lora_alpha, enable_lora=enable_lora)
-        self.head_liuyao = OutputHeadV38(state_dim, dropout=dropout, lora_rank=lora_rank, lora_alpha=lora_alpha, enable_lora=enable_lora)
-        self.method_fusion = nn.MultiheadAttention(embed_dim=state_dim, num_heads=num_heads, dropout=dropout, batch_first=True)
-        self.mlm_head = MLMHead(hidden_dim=64, vocab_size=vocab_size)
-        self.register_buffer('moco_queue', torch.randn(moco_queue_size, state_dim)); self.moco_queue = F.normalize(self.moco_queue, p=2, dim=-1)
-        self.register_buffer('moco_queue_ptr', torch.zeros(1, dtype=torch.long))
-
-    @torch.no_grad()
-    def _momentum_update(self):
-        for param_q, param_k in zip(self.text_encoder.parameters(), self.momentum_text_encoder.parameters()): param_k.data = param_k.data*self.moco_momentum + param_q.data*(1.0-self.moco_momentum)
-        for param_q, param_k in zip(self.text_proj.parameters(), self.momentum_text_proj.parameters()): param_k.data = param_k.data*self.moco_momentum + param_q.data*(1.0-self.moco_momentum)
-
-    def encode_text(self, text_ids):
-        text_pooled, _ = self.text_encoder(text_ids)
-        return self.text_proj(text_pooled)
-
-    @torch.no_grad()
-    def encode_text_momentum(self, text_ids):
-        text_pooled, _ = self.momentum_text_encoder(text_ids)
-        return self.momentum_text_proj(text_pooled)
-
-    def forward(self, symbol_x, text_ids, method_idx, gua_idx, return_state=False, return_text_hidden=False):
-        text_pooled, text_hidden = self.text_encoder(text_ids)
-        text_feat = self.text_proj(text_pooled)
-        mv = self.method_embed(method_idx)
-        gate = self.text_gate(torch.cat([symbol_x, text_feat], dim=-1))
-        fused_x = symbol_x + gate*text_feat
-        c = torch.cat([fused_x, mv], dim=1)
-        if return_state: features, state = self.heluo_ladder(c, gua_idx, return_state=True)
-        else: features = self.heluo_ladder(c, gua_idx, return_state=False); state = None
-        fused, _ = self.method_fusion(features.unsqueeze(0), features.unsqueeze(0), features.unsqueeze(0))
-        features = features + fused.squeeze(0)
-        outputs = {'traditional':self.head_traditional(features, method_name='traditional'), 'meihua':self.head_meihua(features, method_name='meihua'), 'liuyao':self.head_liuyao(features, method_name='liuyao'), 'text_feat':text_feat}
-        if return_text_hidden: outputs['mlm_logits'] = self.mlm_head(text_hidden)
-        if return_state: return outputs, state
-        return outputs
-
-    def retrieval_logits(self, text_emb, temperature=0.1):
-        proto = self.gua_prototype.weight
-        proto_norm = F.normalize(proto, p=2, dim=-1)
-        text_norm = F.normalize(text_emb, p=2, dim=-1)
-        return torch.mm(text_norm, proto_norm.t())/temperature
 
 def verify_sha256(weights_path, hash_path=None):
     if hash_path is None: hash_path = weights_path+".sha256"
@@ -422,7 +60,7 @@ def load_daoti(weights_path, device='cpu'):
         device: 'cpu' or 'cuda'
 
     Returns:
-        YiJingV53Foundation model ready for inference
+        Model ready for inference
     """
     import json
     dir_path = os.path.dirname(os.path.abspath(weights_path))
@@ -432,6 +70,7 @@ def load_daoti(weights_path, device='cpu'):
         vocab_size = config.get("vocab_size", 8145)
     else:
         vocab_size = 8145
+    YiJingV53Foundation = _get_model_class()
     model = YiJingV53Foundation(vocab_size=vocab_size)
     state_dict = torch.load(weights_path, map_location=device, weights_only=True)
     model.load_state_dict(state_dict, strict=False)
@@ -444,8 +83,8 @@ def load_adapter(model, adapter_path, device='cpu'):
     Load a trained domain adapter into the model.
 
     Args:
-        model: Loaded YiJingV53Foundation model
-        adapter_path: Path to adapter .pt file (from train_adapter.py)
+        model: Loaded model
+        adapter_path: Path to adapter .pt file
         device: 'cpu' or 'cuda'
 
     Returns:
@@ -472,7 +111,7 @@ def load_physics_adapter(adapter_path, device='cpu'):
     Load a trained physics adapter for spectrum prediction.
 
     Args:
-        adapter_path: Path to physics adapter .pt file (from train_physics_adapter.py)
+        adapter_path: Path to physics adapter .pt file
         device: 'cpu' or 'cuda'
 
     Returns:
@@ -497,7 +136,7 @@ def predict_physics(daoti_model, adapter_data, physics_params, device='cpu'):
     Predict spectrum from physics parameters using a trained physics adapter.
 
     Args:
-        daoti_model: Loaded YiJingV53Foundation model
+        daoti_model: Loaded model
         adapter_data: Adapter data dict from load_physics_adapter()
         physics_params: Tensor of shape (batch, input_dim) or (input_dim,)
         device: 'cpu' or 'cuda'
@@ -507,7 +146,7 @@ def predict_physics(daoti_model, adapter_data, physics_params, device='cpu'):
             - 'spectrum': predicted spectrum values (denormalized)
             - 'spectrum_norm': normalized spectrum values
     """
-    from train_physics_adapter import PhysicsAdapterModel, SpectrumRegressionHead, PhysicsInputEncoder
+    from _model_core import PhysicsAdapterModel
 
     if physics_params.dim() == 1:
         physics_params = physics_params.unsqueeze(0)
@@ -554,7 +193,7 @@ def predict(model, text_ids, gua_idx, method='traditional', device='cpu'):
     Run divination prediction.
 
     Args:
-        model: Loaded YiJingV53Foundation model
+        model: Loaded model
         text_ids: Tokenized text input, shape (1, seq_len), int tensor
         gua_idx: Hexagram index 0-63
         method: 'traditional' (周易), 'meihua' (梅花), or 'liuyao' (六爻)
@@ -595,11 +234,8 @@ def generate_response(model, text_ids, gua_idx, method='traditional', device='cp
     """
     Generate a structured natural language response via retrieval-augmented generation.
 
-    This function uses the model's structured outputs (palace/liuqin/liushen/wangxiang/biangua_yao)
-    as retrieval keys into a built-in knowledge base, then composes a coherent response.
-
     Args:
-        model: Loaded YiJingV53Foundation model
+        model: Loaded model
         text_ids: Tokenized text input, shape (1, seq_len), int tensor
         gua_idx: Hexagram index 0-63
         method: 'traditional', 'meihua', or 'liuyao'
@@ -654,7 +290,7 @@ def generate_response(model, text_ids, gua_idx, method='traditional', device='cp
     lines.append(f"  六神临爻：{liushen_name}（{liushen_info.get('象义','')}）")
     lines.append(f"  旺相休囚：{wangxiang_name}（{wangxiang_desc}）")
     if moving_yao:
-        lines.append(f"  动爻：第{moving_yao}爻")
+        lines.append(f"  动爻：第{'、'.join(str(y) for y in moving_yao)}爻")
     else:
         lines.append(f"  动爻：无（静卦）")
     lines.append("")

@@ -2,6 +2,8 @@
 
 > **算力不是门槛。结构性增效，而非规模堆积。**
 
+**🚀 [在线演示](https://huggingface.co/spaces/zhibaiYingChuan/daoti-v53)** | **📖 [论文](papers/)** | **📄 [白皮书](白皮书_道体基座技术.md)** | **💬 [讨论](https://github.com/zhibaiYingChuan/DaoTi/issues)**
+
 道体基座（DaoTi V53 Foundation）是一个预训练的神经网络**语义基座模型**。它以中文自然语言文本为输入，输出结构化语义表征——包括编码空间中的语义向量、洛书空间中的状态向量，以及64维结构化原型向量（卦象空间）。
 
 基于**双轨阶梯网络（Bilateral Ladder Network）**架构，在通用语料和易经古典文本上完成预训练。训练完成后核心参数被冻结（「道体」），作为后续所有领域适配的稳定基础。这一**冻结道体 + 轻量适配**范式建立在对**退化基态（Degenerate Ground State）**的发现之上——这是深度学习中一种规范场论结构。整个V53模型在**消费级CPU**上完成训练，无需GPU集群。
@@ -11,6 +13,51 @@
 - 作为下游任务的特征提取器
 - 易经文本的结构化推理（包括卦象推演）
 - 作为任何需要稳定语义表征的AI系统的认知基座
+
+## 快速开始
+
+```bash
+# 1. 克隆仓库
+git clone https://github.com/zhibaiYingChuan/DaoTi.git
+cd DaoTi
+
+# 2. 安装依赖
+pip install -r requirements.txt
+
+# 3a. 启动交互式演示（推荐）
+python app.py
+
+# 3b. 或运行命令行演示
+python demo_real_text.py
+```
+
+### 目录结构
+
+```
+DaoTi/
+├── app.py                      # Gradio 交互式演示（浏览器体验）
+├── _constants.py               # 数据常量（卦象、五行、知识库等）
+├── _model_core.py              # 模型架构定义（受许可证保护）
+├── inference.py                # 推理接口（加载 + 预测 + 适配器加载，不含架构定义）
+├── demo_real_text.py           # 命令行推理演示
+├── train_adapter.py            # 领域适配器训练脚本（冻结道体，只训练 LoRA）
+├── train_physics_adapter.py    # 物理参数适配器训练脚本
+├── eval_benchmark.py           # 基准测试脚本
+├── build_tokenizer.py          # 分词器构建脚本
+├── yijing_v53_daoti.pt         # 模型权重文件
+├── yijing_v53_daoti.pt.sha256  # SHA256 校验文件
+├── yijing_v53_config.json      # 模型配置参数
+├── daoti_v53_tokenizer.pt      # 分词器（探针+BPE+精炼，三阶段优化）
+├── requirements.txt            # Python 依赖
+├── 白皮书_道体基座技术.md       # 技术白皮书
+├── papers/                     # 6 篇研究论文
+├── ADAPTER_TRAINING.md         # 适配器训练详细文档
+├── PHYSICS_ADAPTER.md          # 物理适配器详细文档
+├── BENCHMARK.md                # 基准测试详细文档
+├── CONTRIBUTING.md             # 贡献指南
+├── LICENSE                     # 模型权重许可证（DaoTi Research License v1.0）
+└── LICENSE_CODE                # 代码许可证（Apache 2.0）
+```
 
 ## 道体模型是什么
 
@@ -42,17 +89,21 @@
 | `yijing_v53_daoti.pt` | 模型权重文件 (state_dict，纯数据) |
 | `yijing_v53_daoti.pt.sha256` | SHA256 校验文件 |
 | `yijing_v53_config.json` | 模型配置参数 |
-| `inference.py` | 推理脚本 (加载 + 预测 + 适配器加载) |
+| `_constants.py` | 数据常量（卦象、五行、知识库等） |
+| `_model_core.py` | 模型架构定义（受许可证保护） |
+| `inference.py` | 推理接口 (加载 + 预测 + 适配器加载，不含架构定义) |
+| `app.py` | Gradio 交互式演示 (浏览器体验模型效果) |
 | `train_adapter.py` | 领域适配器训练脚本 (冻结道体，只训练 LoRA) |
 | `train_physics_adapter.py` | 物理参数适配器训练脚本 (冻结道体，训练输入编码器+回归头) |
 | `daoti_v53_tokenizer.pt` | 分词器 (探针+BPE+精炼，三阶段优化) |
 | `build_tokenizer.py` | 分词器构建脚本 |
 | `eval_benchmark.py` | 基准测试脚本 |
-| `demo_real_text.py` | 完整演示脚本 (真实中文输入 → 完整推理链条) |
+| `demo_real_text.py` | 推理演示脚本 (完整推理链条展示) |
+| `requirements.txt` | Python 依赖 (一键安装) |
 | `白皮书_道体基座技术.md` | 技术白皮书 |
 | `papers/` | 6 篇研究论文 |
 
-**注意：架构源码、训练代码、训练数据配方不在此仓库中。** 它们作为核心工艺受到保护。详见 [LICENSE](LICENSE)。
+**注意：架构源码的脱敏版本（_model_core.py）已包含在仓库中，类名已泛化且不含设计意图注释。原始架构源码（含完整设计文档）、训练代码、训练数据配方不在此仓库中。** 详见 [LICENSE](LICENSE)。
 
 ## Why DaoTi — Structural Efficiency vs. Scale
 
@@ -122,7 +173,7 @@ verify_sha256("yijing_v53_daoti.pt")
 # ——— Step 2: 加载模型（CPU 模式）———
 model = load_daoti("yijing_v53_daoti.pt", device='cpu')
 print(f"Model loaded. Parameters: {sum(p.numel() for p in model.parameters()):,}")
-# Output: Model loaded. Parameters: 5,059,040
+# Output: Model loaded. Parameters: 4,423,024
 
 # ——— Step 3: 准备输入文本 ———
 # 示例：占问"今日出行是否顺利"
@@ -243,7 +294,7 @@ r3 = predict(model, text_ids, gua_idx=0, method='liuyao')
 | **不确定性度量** | 卦象熵 | 当系统对输入的状态判断模糊（熵值高）时 → 主动拒答或请求澄清 |
 | **信息过滤** | 相干性门控 | 信息流通过相干性门控，低相干信息被抑制，防止杂散信号污染推理链路 |
 | **动态阈值** | SelfTuning | 基于历史交互反馈，动态调整拒绝行为的敏感度 |
-| **架构级免疫** | 道体冻结 | 核心认知框架不可篡改。所有新知识学习通过适配器进行，适配器**无法**通过 text_proj（梯度为零）将修改传播回编码器 |
+| **架构级免疫** | 道体冻结 | 核心认知框架不可篡改。所有新知识学习通过适配器进行，适配器**无法**将修改传播回编码器 |
 
 ### 为什么无法「越狱」
 
@@ -257,18 +308,15 @@ r3 = predict(model, text_ids, gua_idx=0, method='liuyao')
 
 | 脚本 | 用途 |
 |:---|:---|
-| `inference.py` | **极简验证**：用随机数据验证模型可加载和推理 |
-| `demo_real_text.py` | **深度解剖**：逐层展示编码→投影→融合→递归推演→原型注意力→规则推理→多任务输出的完整计算链路 |
+| `inference.py` | **推理接口**：加载模型、执行推理、加载适配器 |
+| `demo_real_text.py` | **推理演示**：展示完整推理链路和模型能力 |
 
 ```bash
-# 极简演示（验证模型能否正常加载和推理）
-python inference.py
-
-# 深度解剖（完整推理链路，11 层逐层展示）
+# 推理演示（完整推理链路展示）
 python demo_real_text.py
 ```
 
-`demo_real_text.py` 跑完后你会亲眼看到：这个模型经过了 TextEncoder 编码 → text_proj 不动点投影 → 符号-文本门控融合 → HeLuoLadderNetwork 多层多步双轨递归推演 → 语义原型注意力 → 五行生克规则推理（含硬编码生克矩阵残差学习） → 8 任务并行输出 → 原型空间检索 → RAG 检索增强生成（自然语言输出） → 相干性自校准（不确定性估计）。**分类（palace）只是 10 个线性头中的 1 个。**
+`demo_real_text.py` 跑完后你会亲眼看到：这个模型经过了语义编码 → 投影 → 融合 → 递归推演 → 规则推理 → 多任务输出 → 原型检索 → RAG 生成 → 相干性自校准。**分类（palace）只是多个输出头中的 1 个。**
 
 ## RAG 检索增强生成
 
@@ -382,7 +430,7 @@ print(result['spectrum'])
 
 | 组件 | 参数量 | 是否训练 |
 |:-----|:-------|:---------|
-| 道体核心 | 5,033,696 | ❌ 冻结 |
+| 道体核心 | 4,423,024 | ❌ 冻结 |
 | 输入编码器 (MLP) | ~50K | ✅ 训练 |
 | 回归输出头 (MLP) | ~100K | ✅ 训练 |
 
@@ -402,7 +450,7 @@ python eval_benchmark.py
 |:---|:---|:---|
 | 理论层 | 退化基态理论、规范场论结构、不动点性质 | ✅ 论文+白皮书 已公开 |
 | 产品层 | 模型权重 (.pt)、推理接口 | ✅ 本仓库 |
-| 工艺层 | 架构源码、训练代码、数据配方 | 🔒 保护中（合作获取） |
+| 工艺层 | 架构源码 (_model_core.py，类名已脱敏)、训练代码、数据配方 | 🔒 部分保护（代码可见但脱敏，训练配方不公开） |
 
 **理论确立学术优先权。产品广泛分发建立生态。工艺严格保护形成壁垒。**
 
@@ -429,11 +477,17 @@ python eval_benchmark.py
 
 ## License
 
-本仓库中的模型权重、推理脚本和文档依据 **DaoTi Research License v1.0**（中英双语）发布。
+本仓库采用**双许可证**策略：
+
+| 资产类型 | 许可证 | 文件 |
+|:---|:---|:---|
+| **代码**（inference.py, app.py, train_adapter.py 等） | **Apache 2.0** | [LICENSE_CODE](LICENSE_CODE) |
+| **模型权重**（yijing_v53_daoti.pt） | **DaoTi Research License v1.0** | [LICENSE](LICENSE) |
+
+Apache 2.0 允许商业使用和修改，但必须保留版权声明，并明确授予专利使用权。
+模型权重继续使用自定义协议，限制商业再分发和滥用。
 
 架构源码、训练代码等核心工艺不在此仓库中，需另行授权。详见 [LICENSE](LICENSE)。
-
-这不是 MIT、Apache 或 GPL。它是为道体知识产权分层保护而设计的自定义许可证。
 
 ## Hardware Requirements
 
@@ -475,8 +529,8 @@ DaoTi V53 runs on CPU by default. GPU mode provides ~3-5x speedup but is entirel
 |:---|:---|:---|
 | 模型加载（冷启动） | 800 - 1500 | .pt 文件读取 + state_dict 加载 |
 | 模型加载（热启动） | 50 - 200 | OS 文件缓存命中时 |
-| 推理 — 文本编码 | 15 - 25 | TextEncoder 前向传播 |
-| 推理 — 道核推演 | 80 - 150 | HeLuoLadderNetwork 递归推演 |
+| 推理 — 文本编码 | 15 - 25 | 语义编码器前向传播 |
+| 推理 — 道核推演 | 80 - 150 | 递归推演引擎计算 |
 | 推理 — 输出头 | 10 - 20 | 多任务输出头并行计算 |
 | **总计（端到端）** | **100 - 200** | 从输入到全部预测结果返回 |
 
@@ -490,12 +544,12 @@ DaoTi V53 runs on CPU by default. GPU mode provides ~3-5x speedup but is entirel
 |:---|:---|:---|
 | 道体 (Dao Ti) | 冻结的预训练基座模型参数 | 被锁定不能修改的核心「大脑」 |
 | 卦象空间 | 64 维结构化原型向量空间 | 模型的「内部工作语言」 |
-| 阴阳分化 | 双分支门控机制 (yang_proj + yin_proj + gate) | 把信息分两条路分别处理，一条主干一条细节 |
+| 阴阳分化 | 双分支门控机制 | 把信息分两条路分别处理，一条主干一条细节 |
 | 五行曲率 | 5 头注意力 + 相生相克偏置矩阵 | 模型内部的知识分类标准，有些相关有些排斥 |
 | 共振腔 | 每域维护的 EMA 中心向量 + 波能量 + 相干性 | 模型判断「我懂不懂」的自我评估系统 |
 | 适配器 (Adapter) | 轻量级参数模块，冻结道体下的迁移学习 | 不用重练大脑，只学新知识的小插件 |
-| 规范场 (Gauge Field) | gua_prototype 作为补偿场的角色 | 保证「文本→卦象」映射不受编码器扰动影响 |
-| 退化基态 | text_proj 参数空间中损失近乎平坦的状态 | 核心投影层改不改都行，效果不变 |
+| 规范场 (Gauge Field) | 原型嵌入作为补偿场的角色 | 保证「文本→卦象」映射不受编码器扰动影响 |
+| 退化基态 | 投影层参数空间中损失近乎平坦的状态 | 核心投影层改不改都行，效果不变 |
 | 三爻空间 | 多域语义精炼架构 | 把语义信息进一步提纯、结构化的处理流水线 |
 | 洛书空间 | 道体核心的运算空间 | 模型的所有「思考」都发生在这个高维语义空间中 |
 | 驻波共振 | 领域表征的 EMA 平均向量 | 模型对自己擅长领域的「记忆快照」 |

@@ -31,7 +31,7 @@ import numpy as np
 from collections import Counter
 
 from inference import (
-    load_daoti, verify_sha256, YiJingV53Foundation,
+    load_daoti, verify_sha256,
     GUA_64, BA_GONG, find_palace, GUA_64_DETAIL,
     sparse_expand_input, MAX_SEQ, STATE_DIM,
     METHOD_MAP, PALACE_MAP,

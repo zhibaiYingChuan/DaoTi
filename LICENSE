@@ -1,4 +1,4 @@
-﻿DAO TI RESEARCH LICENSE
+DAO TI RESEARCH LICENSE
 道体研究许可证
 
 Version 1.0, May 2026
@@ -22,24 +22,33 @@ This License governs the use, reproduction, and distribution of the DaoTi
     including:
     (a) yijing_v53_daoti.pt (model weights in state_dict format);
     (b) yijing_v53_daoti.sha256 (SHA256 verification file);
-    (c) inference.py (runtime inference script);
-    (d) yijing_v53_config.json (configuration file);
-    (e) 白皮书_道体基座技术.md and the papers/ directory (documentation).
+    (c) _constants.py (data constants);
+    (d) _model_core.py (model architecture definitions, obfuscated);
+    (e) inference.py (runtime inference interface);
+    (f) yijing_v53_config.json (configuration file);
+    (g) 白皮书_道体基座技术.md and the papers/ directory (documentation).
 
     "仓库资产" 指公开仓库中包含的所有文件，具体包括：
     (a) yijing_v53_daoti.pt（state_dict 格式的模型权重）；
     (b) yijing_v53_daoti.sha256（SHA256 校验文件）；
-    (c) inference.py（运行时推理脚本）；
-    (d) yijing_v53_config.json（配置文件）；
-    (e) 白皮书_道体基座技术.md 和 papers/ 目录（文档）。
+    (c) _constants.py（数据常量）；
+    (d) _model_core.py（模型架构定义，类名已脱敏）；
+    (e) inference.py（运行时推理接口）；
+    (f) yijing_v53_config.json（配置文件）；
+    (g) 白皮书_道体基座技术.md 和 papers/ 目录（文档）。
 
 1.2 "Architecture Source Code" means the complete model architecture
-    implementation including all module class definitions, training logic,
-    loss functions, and data processing pipelines. Architecture Source Code
-    is NOT included in the public repository and is protected as a trade secret.
+    implementation including original class names, training logic,
+    loss functions, and data processing pipelines. An obfuscated version
+    of the architecture (_model_core.py) is included in the repository
+    with generic class names and no design-intent comments. The original
+    Architecture Source Code with full design documentation is NOT
+    included in the public repository and is protected as a trade secret.
 
-    "架构源码" 指完整的模型架构实现，包括所有模块类定义、训练逻辑、损失函数
-    和数据处理流水线。架构源码不包含在公开仓库中，作为商业秘密受到保护。
+    "架构源码" 指完整的模型架构实现，包括原始类名、训练逻辑、损失函数
+    和数据处理流水线。架构的脱敏版本（_model_core.py）已包含在仓库中，
+    使用泛化类名且不含设计意图注释。包含完整设计文档的原始架构源码
+    不包含在公开仓库中，作为商业秘密受到保护。
 
 1.3 "Documentation" means the written materials describing the theoretical
     foundations, training methodology, experimental results, and system design,
