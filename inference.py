@@ -467,6 +467,88 @@ def load_adapter(model, adapter_path, device='cpu'):
     print(f"[OK] Adapter loaded: domain='{domain}', method='{method}', {loaded} weight tensors")
     return model
 
+def load_physics_adapter(adapter_path, device='cpu'):
+    """
+    Load a trained physics adapter for spectrum prediction.
+
+    Args:
+        adapter_path: Path to physics adapter .pt file (from train_physics_adapter.py)
+        device: 'cpu' or 'cuda'
+
+    Returns:
+        dict with adapter data including weights, norm_stats, input_dim, output_dim
+    """
+    adapter_data = torch.load(adapter_path, map_location=device, weights_only=False)
+    if adapter_data.get('type') != 'physics_adapter':
+        print(f"[WARN] Not a physics adapter file: {adapter_path}")
+        return None
+    input_dim = adapter_data.get('input_dim', 0)
+    output_dim = adapter_data.get('output_dim', 0)
+    norm_stats = adapter_data.get('norm_stats', None)
+    if norm_stats:
+        for k, v in norm_stats.items():
+            if isinstance(v, list):
+                norm_stats[k] = torch.tensor(v, dtype=torch.float32, device=device)
+    print(f"[OK] Physics adapter loaded: input_dim={input_dim}, output_dim={output_dim}")
+    return adapter_data
+
+def predict_physics(daoti_model, adapter_data, physics_params, device='cpu'):
+    """
+    Predict spectrum from physics parameters using a trained physics adapter.
+
+    Args:
+        daoti_model: Loaded YiJingV53Foundation model
+        adapter_data: Adapter data dict from load_physics_adapter()
+        physics_params: Tensor of shape (batch, input_dim) or (input_dim,)
+        device: 'cpu' or 'cuda'
+
+    Returns:
+        dict with:
+            - 'spectrum': predicted spectrum values (denormalized)
+            - 'spectrum_norm': normalized spectrum values
+    """
+    from train_physics_adapter import PhysicsAdapterModel, SpectrumRegressionHead, PhysicsInputEncoder
+
+    if physics_params.dim() == 1:
+        physics_params = physics_params.unsqueeze(0)
+
+    input_dim = adapter_data['input_dim']
+    output_dim = adapter_data['output_dim']
+    norm_stats = adapter_data.get('norm_stats', {})
+
+    adapter_model = PhysicsAdapterModel(
+        daoti_model, input_dim, output_dim,
+        state_dim=STATE_DIM, freeze_daoti=True
+    ).to(device)
+
+    weights = adapter_data.get('weights', {})
+    adapter_state = adapter_model.state_dict()
+    for name, tensor in weights.items():
+        if name in adapter_state:
+            adapter_state[name] = tensor.to(device)
+    adapter_model.load_state_dict(adapter_state, strict=False)
+    adapter_model.eval()
+
+    params_norm = physics_params.to(device)
+    if norm_stats and 'params_mean' in norm_stats:
+        params_mean = norm_stats['params_mean'].to(device)
+        params_std = norm_stats['params_std'].to(device)
+        params_norm = (physics_params.to(device) - params_mean) / params_std
+
+    with torch.no_grad():
+        spectrum_norm = adapter_model(params_norm)
+
+    spectrum = spectrum_norm
+    if norm_stats and 'spectrum_mean' in norm_stats:
+        spec_mean = norm_stats['spectrum_mean'].to(device)
+        spec_std = norm_stats['spectrum_std'].to(device)
+        spectrum = spectrum_norm * spec_std + spec_mean
+
+    return {
+        'spectrum': spectrum.cpu(),
+        'spectrum_norm': spectrum_norm.cpu(),
+    }
+
 def predict(model, text_ids, gua_idx, method='traditional', device='cpu'):
     """
     Run divination prediction.

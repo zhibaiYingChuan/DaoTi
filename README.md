@@ -44,6 +44,7 @@
 | `yijing_v53_config.json` | 模型配置参数 |
 | `inference.py` | 推理脚本 (加载 + 预测 + 适配器加载) |
 | `train_adapter.py` | 领域适配器训练脚本 (冻结道体，只训练 LoRA) |
+| `train_physics_adapter.py` | 物理参数适配器训练脚本 (冻结道体，训练输入编码器+回归头) |
 | `daoti_v53_tokenizer.pt` | 分词器 (探针+BPE+精炼，三阶段优化) |
 | `build_tokenizer.py` | 分词器构建脚本 |
 | `eval_benchmark.py` | 基准测试脚本 |
@@ -338,6 +339,54 @@ model = load_adapter(model, 'optics_adapter.pt')
 - **可随时卸载**：重新加载原始模型即可恢复无适配器状态
 
 详细说明见 [ADAPTER_TRAINING.md](ADAPTER_TRAINING.md)。
+
+## 物理参数适配器
+
+除了文本领域适配器，道体还支持**物理参数 → 光谱预测**的适配器。无需修改道体核心，只需训练两个外挂组件：
+
+1. **输入编码器**：物理参数 → 轻量 MLP → 176 维状态向量（道体的语言）
+2. **回归输出头**：道体内部状态 → 光谱值
+
+### 快速开始
+
+```bash
+# 1. 准备数据 (JSONL格式)
+echo '{"params": [0.5, 0.3, 1.45, 0.2], "spectrum": [0.1, 0.5, 0.9, ...]}' > optics.jsonl
+
+# 2. 训练物理适配器
+python train_physics_adapter.py \
+    --data_path ./optics.jsonl \
+    --output_path ./optics_adapter.pt \
+    --input_dim 4 \
+    --output_dim 100 \
+    --epochs 50 \
+    --lr 1e-3
+
+# 3. 推理
+python -c "
+from inference import load_daoti, load_physics_adapter, predict_physics
+import torch
+model = load_daoti('yijing_v53_daoti.pt')
+adapter = load_physics_adapter('optics_adapter.pt')
+params = torch.tensor([[0.5, 0.3, 1.45, 0.2]])
+result = predict_physics(model, adapter, params)
+print(result['spectrum'])
+"
+```
+
+### 适配器架构
+
+```
+物理参数 [input_dim] → MLP编码器 → 176维状态 → 道体核心(冻结) → 特征 → 回归头 → 光谱 [output_dim]
+```
+
+| 组件 | 参数量 | 是否训练 |
+|:-----|:-------|:---------|
+| 道体核心 | 5,033,696 | ❌ 冻结 |
+| 输入编码器 (MLP) | ~50K | ✅ 训练 |
+| 回归输出头 (MLP) | ~100K | ✅ 训练 |
+
+详细说明见 [PHYSICS_ADAPTER.md](PHYSICS_ADAPTER.md)。
 
 ## 基准测试
 
