@@ -1,0 +1,9 @@
+#!/bin/sh
+python check_training_leak.py
+if [ $? -ne 0 ]; then
+    echo ""
+    echo "❌ Commit blocked: Training logic leak detected."
+    echo "   If this is intentional, add the filename to EXCLUDE_FILES in check_training_leak.py"
+    echo "   To bypass: git commit --no-verify"
+    exit 1
+fi
