@@ -42,7 +42,11 @@
 | `yijing_v53_daoti.pt` | 模型权重文件 (state_dict，纯数据) |
 | `yijing_v53_daoti.pt.sha256` | SHA256 校验文件 |
 | `yijing_v53_config.json` | 模型配置参数 |
-| `inference.py` | 极简推理脚本 (加载 + 预测) |
+| `inference.py` | 推理脚本 (加载 + 预测 + 适配器加载) |
+| `train_adapter.py` | 领域适配器训练脚本 (冻结道体，只训练 LoRA) |
+| `daoti_v53_tokenizer.pt` | 分词器 (探针+BPE+精炼，三阶段优化) |
+| `build_tokenizer.py` | 分词器构建脚本 |
+| `eval_benchmark.py` | 基准测试脚本 |
 | `demo_real_text.py` | 完整演示脚本 (真实中文输入 → 完整推理链条) |
 | `白皮书_道体基座技术.md` | 技术白皮书 |
 | `papers/` | 6 篇研究论文 |
@@ -285,6 +289,55 @@ print(result['details'])          # 结构化推理明细
 ```
 
 当相干性低于阈值（默认 0.3）时，模型会主动声明不确定性——这不是外挂护栏，而是根植于架构的内在约束。
+
+## 领域适配器训练
+
+道体核心权重冻结后，用户可以在自己的数据上训练 **LoRA 领域适配器**，扩展模型到新领域，而无需修改道体核心。
+
+### 快速开始
+
+```bash
+# 1. 准备数据 (JSONL格式)
+echo '{"text": "光栅周期为500纳米时，共振波长出现在1550纳米附近", "domain": "optics"}' > my_data.jsonl
+echo '{"text": "当占空比从0.3增加到0.7，Q因子先升后降", "domain": "optics"}' >> my_data.jsonl
+
+# 2. 训练适配器
+python train_adapter.py \
+    --data_path ./my_data.jsonl \
+    --output_path ./optics_adapter.pt \
+    --domain_name "optics" \
+    --method traditional \
+    --epochs 10 \
+    --lr 1e-4
+
+# 3. 加载适配器推理
+python -c "
+from inference import load_daoti, load_adapter, predict
+import torch
+model = load_daoti('yijing_v53_daoti.pt')
+model = load_adapter(model, 'optics_adapter.pt')
+"
+```
+
+### 训练参数
+
+| 参数 | 默认值 | 说明 |
+|:-----|:-------|:-----|
+| `--data_path` | (必需) | JSONL 数据文件路径 |
+| `--output_path` | `adapter.pt` | 适配器输出路径 |
+| `--domain_name` | `custom` | 领域名称 |
+| `--method` | `traditional` | 训练哪个方法头 (`traditional`/`meihua`/`liuyao`) |
+| `--epochs` | 10 | 训练轮数 |
+| `--batch_size` | 8 | 批大小 |
+| `--lr` | 1e-4 | 学习率 |
+
+### 安全约束
+
+- **道体核心权重始终冻结**：训练只更新 LoRA 适配器参数（`lora_A`/`lora_B`）
+- **适配器权重独立存储**：输出 `.pt` 文件仅包含 LoRA 参数，不包含道体核心
+- **可随时卸载**：重新加载原始模型即可恢复无适配器状态
+
+详细说明见 [ADAPTER_TRAINING.md](ADAPTER_TRAINING.md)。
 
 ## 基准测试
 

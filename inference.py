@@ -439,6 +439,34 @@ def load_daoti(weights_path, device='cpu'):
     model.eval()
     return model
 
+def load_adapter(model, adapter_path, device='cpu'):
+    """
+    Load a trained domain adapter into the model.
+
+    Args:
+        model: Loaded YiJingV53Foundation model
+        adapter_path: Path to adapter .pt file (from train_adapter.py)
+        device: 'cpu' or 'cuda'
+
+    Returns:
+        model with adapter weights applied
+    """
+    adapter_data = torch.load(adapter_path, map_location=device, weights_only=False)
+    weights = adapter_data.get('weights', {})
+    domain = adapter_data.get('domain', 'unknown')
+    method = adapter_data.get('method', 'traditional')
+
+    model_state = model.state_dict()
+    loaded = 0
+    for name, tensor in weights.items():
+        if name in model_state:
+            model_state[name] = tensor.to(device)
+            loaded += 1
+
+    model.load_state_dict(model_state, strict=False)
+    print(f"[OK] Adapter loaded: domain='{domain}', method='{method}', {loaded} weight tensors")
+    return model
+
 def predict(model, text_ids, gua_idx, method='traditional', device='cpu'):
     """
     Run divination prediction.
