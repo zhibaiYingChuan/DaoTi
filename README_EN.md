@@ -12,17 +12,17 @@
 
 ## What is DaoTi V53?
 
-DaoTi V53 is a pretrained **semantic foundation model** that takes Chinese natural language text as input and outputs structured semantic representations �?including semantic vectors in the encoding space, state vectors in the Luoshu space, and 64-dimensional structured prototype vectors (hexagram space).
+DaoTi V53 is a pretrained **semantic foundation model** that takes Chinese natural language text as input and outputs structured semantic representations — including semantic vectors in the encoding space, state vectors in the Luoshu space, and 64-dimensional structured prototype vectors (hexagram space).
 
-Built on the **Bilateral Ladder Network** architecture, trained on general corpora and I Ching classical texts. After training, core parameters are frozen ("DaoTi"), serving as a stable foundation for all domain adaptation. This **Frozen DaoTi + Lightweight Adapter** paradigm is grounded in the discovery of the **Degenerate Ground State** �?a gauge-theoretic structure in deep learning. The entire V53 model was trained on a **consumer-grade CPU**, requiring no GPU cluster.
+Built on the **Bilateral Ladder Network** architecture, trained on general corpora and I Ching classical texts. After training, core parameters are frozen ("DaoTi"), serving as a stable foundation for all domain adaptation. This **Frozen DaoTi + Lightweight Adapter** paradigm is grounded in the discovery of the **Degenerate Ground State** — a gauge-theoretic structure in deep learning. The entire V53 model was trained on a **consumer-grade CPU**, requiring no GPU cluster.
 
 ## Key Features
 
 - **Bilateral Ladder Network**: Trained on consumer CPU, no GPU required
 - **64-Dimensional Hexagram Space**: Structured reasoning across Eight Palaces, Six Relations, Six Spirits, Heavenly Stems, Earthly Branches, Prosperity-Decline states
-- **Frozen Core + Adapter Paradigm**: LoRA domain adapters + physics parameter adapters �?core is immutable
+- **Frozen Core + Adapter Paradigm**: LoRA domain adapters + physics parameter adapters — core is immutable
 - **64-Channel Spike Encoding**: STDP gradient-free learning + architectural safety lock
-- **RAG-Enhanced Generation**: Structured reasoning �?knowledge base retrieval �?natural language response
+- **RAG-Enhanced Generation**: Structured reasoning → knowledge base retrieval → natural language response
 - **Architectural Safety**: Domain gating / hexagram entropy uncertainty / coherence gating / DaoTi freeze immunity
 
 ## Quick Start
