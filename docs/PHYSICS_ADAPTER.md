@@ -31,7 +31,7 @@
 ## 训练命令
 
 ```bash
-python train_physics_adapter.py \
+python scripts/train_physics_adapter.py \
     --data_path ./optics_data.jsonl \
     --output_path ./optics_adapter.pt \
     --input_dim 8 \
@@ -44,10 +44,10 @@ python train_physics_adapter.py \
 ## 推理命令
 
 ```python
-from inference import load_daoti, load_physics_adapter, predict_physics
+from daoti.inference import load_daoti, load_physics_adapter, predict_physics
 import torch
 
-model = load_daoti("yijing_v53_daoti.pt")
+model = load_daoti("weights/yijing_v53_daoti.pt")
 adapter_data = load_physics_adapter("optics_adapter.pt")
 
 params = torch.tensor([[0.5, 0.3, 1.45, 0.2, 25.0, 0.01, 0.0, 0.0]])

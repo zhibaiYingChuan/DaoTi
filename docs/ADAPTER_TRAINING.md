@@ -28,7 +28,7 @@
 ## 训练命令
 
 ```bash
-python train_adapter.py \
+python scripts/train_adapter.py \
     --data_path ./my_data.jsonl \
     --output_path ./my_adapter.pt \
     --domain_name "optics" \
@@ -40,9 +40,9 @@ python train_adapter.py \
 ## 加载适配器推理
 
 ```python
-from inference import load_daoti, load_adapter, predict
+from daoti.inference import load_daoti, load_adapter, predict
 
-model = load_daoti("yijing_v53_daoti.pt")
+model = load_daoti("weights/yijing_v53_daoti.pt")
 model = load_adapter(model, "my_adapter.pt")
 
 result = predict(model, text_ids, gua_idx=0, method='traditional')

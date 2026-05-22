@@ -6,10 +6,10 @@
 
 ```bash
 # 随机 token ids 模式（默认，固定种子 seed=42 确保可复现）
-python eval_benchmark.py
+python scripts/eval_benchmark.py
 
 # 真实中文文本模式（探针优化分词器）
-python eval_benchmark.py --real-text
+python scripts/eval_benchmark.py --real-text
 ```
 
 随机模式输出 `benchmark_results.json`，真实文本模式输出 `benchmark_results_real_text.json`。

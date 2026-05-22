@@ -1,4 +1,4 @@
-﻿# DaoTi V53 API Reference
+# DaoTi V53 API Reference
 
 > **License** · Code: [Apache 2.0](LICENSE_CODE) · Model Weights: [DaoTi Research License v1.0](LICENSE)
 
@@ -10,8 +10,8 @@ from daoti.inference import load_daoti, predict, generate_response, verify_sha25
 verify_sha256("weights/yijing_v53_daoti.pt")
 model = load_daoti("weights/yijing_v53_daoti.pt")
 
-from daoti.inference import tokenize
-text_ids = tokenize("天行健，君子以自强不息", max_seq=256)
+import torch
+text_ids = torch.randint(1, 100, (1, 256), dtype=torch.long)  # replace with your tokenized input
 result = predict(model, text_ids, gua_idx=0, method='traditional')
 response = generate_response(model, text_ids, gua_idx=0, method='traditional')
 ```
@@ -184,17 +184,6 @@ Find the Eight-Palace归属 for a given hexagram.
 | `gua_idx` | `int` | Hexagram index, 0–63 |
 
 **Returns:** `int` — Palace index, 0–7.
-
-### `tokenize(text, max_seq=256)`
-
-Tokenize Chinese text using the built-in tokenizer mapping. Returns a padded tensor ready for model input.
-
-| Parameter | Type | Default | Description |
-|:---|:---|:---|:---|
-| `text` | `str` | required | Chinese text input |
-| `max_seq` | `int` | `256` | Maximum sequence length |
-
-**Returns:** `Tensor` — Shape `(1, max_seq)`, dtype `torch.long`.
 
 ---
 
