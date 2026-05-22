@@ -6,7 +6,7 @@
 >
 > **核心设计**：道体基座永久冻结，仅通过轻量适配器学习新知识。**本项目不提供基座训练代码，也不接受对基座权重的修改请求。**
 
-**🚀 [道体在线演示](https://sfang.cc/#demos)** | **⚡ 脉冲编码接口演示（暂未开放）** | **📖 [论文](docs/papers/)** | **📄 [白皮书](docs/白皮书_道体基座技术.md)** | **💬 [讨论](https://github.com/zhibaiYingChuan/DaoTi/issues)**
+**🚀 [道体在线演示](https://sfang.cc/#demos)** | **⚡ [脉冲编码接口演示](https://modelscope.cn/studios/spring30/daoti-v53-spike)**（API 暂未开放） | **📖 [论文](docs/papers/)** | **📄 [白皮书](docs/白皮书_道体基座技术.md)** | **💬 [讨论](https://github.com/zhibaiYingChuan/DaoTi/issues)**
 
 道体基座（DaoTi V53 Foundation）是一个预训练的神经网络**语义基座模型**。它以中文自然语言文本为输入，输出结构化语义表征——包括编码空间中的语义向量、洛书空间中的状态向量，以及64维结构化原型向量（卦象空间）。
 基于**双轨阶梯网络（Bilateral Ladder Network）**架构，在通用语料和易经古典文本上完成预训练。训练完成后核心参数被冻结（「道体」），作为后续所有领域适配的稳定基础。这一**冻结道体 + 轻量适配**范式建立在对**退化基态（Degenerate Ground State）**的发现之上——这是深度学习中一种规范场论结构。整个V53模型在**消费级CPU**上完成训练，无需GPU集群。
