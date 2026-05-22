@@ -31,7 +31,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from _constants import (
+from daoti._constants import (
     MAX_SEQ, STATE_DIM,
     XIAN_TIAN_MAP, HOU_TIAN_MAP, GUA_TRIGRAM,
     WUXING_SHENGKE_MATRIX, LIUQIN_MAP,
@@ -136,7 +136,7 @@ class CoreEngine(nn.Module):
         self.input_encoder = nn.Sequential(
             nn.Linear(input_dim, hidden_dim), nn.LayerNorm(hidden_dim), nn.GELU(), nn.Dropout(dropout),
             nn.Linear(hidden_dim, state_dim), nn.LayerNorm(state_dim), nn.Dropout(dropout * _ENCODER_DROPOUT_SCALE),
-        ])
+        )
         self.ladder_layers = nn.ModuleList([
             CellBlock(state_dim, hidden_dim, gua_embed_dim=gua_embed_dim, dropout=dropout)
             for _ in range(num_layers)

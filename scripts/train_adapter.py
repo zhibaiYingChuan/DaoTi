@@ -24,13 +24,16 @@ import argparse
 import json
 import os
 import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from collections import Counter
 
-from inference import (
+from daoti.inference import (
     load_daoti, verify_sha256,
     GUA_64, BA_GONG, find_palace, GUA_64_DETAIL,
     sparse_expand_input, MAX_SEQ, STATE_DIM,

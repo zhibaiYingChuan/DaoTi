@@ -20,13 +20,13 @@ DaoTi Spike Encoding Interface — Gradio Demo
 import sys
 import os
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
 import torch
 import numpy as np
 import gradio as gr
 
-from spike_interface import (
+from daoti.spike_interface import (
     SpikeEncoder,
     GUA_ACTION_SEMANTICS, SAFETY_CHANNELS, MOTOR_CHANNELS,
     COGNITIVE_CHANNELS, PERCEPTION_CHANNELS, HOMEOSTASIS_CHANNELS,

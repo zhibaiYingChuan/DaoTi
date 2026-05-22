@@ -16,12 +16,17 @@ Strategy:
   Phase 5: Save as daoti_v53_tokenizer.pt
 """
 
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
 import torch
 import torch.nn.functional as F
 import numpy as np
 import json
 from collections import Counter
-from inference import (
+from daoti.inference import (
     load_daoti, verify_sha256, compute_coherence, MAX_SEQ,
 )
 

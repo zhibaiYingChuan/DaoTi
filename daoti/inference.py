@@ -27,11 +27,11 @@ from typing import Optional
 import os
 import hashlib
 
-from _constants import *
+from daoti._constants import *
 
 
 def _get_model_class():
-    from _model_core import YiJingV53Foundation
+    from daoti._model_core import YiJingV53Foundation
     return YiJingV53Foundation
 
 

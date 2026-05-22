@@ -20,7 +20,10 @@ import json
 import sys
 import os
 import argparse
-from inference import (
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
+from daoti.inference import (
     load_daoti, predict, compute_coherence, verify_sha256,
     generate_response, GUA_64, BA_GONG, GUA_TRIGRAM, GUA_WUXING,
     find_palace, sparse_expand_input, STATE_DIM, MAX_SEQ,

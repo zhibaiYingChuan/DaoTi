@@ -12,9 +12,14 @@ DaoTi V53 Gradio Demo
     3. Space 自动构建和启动
 """
 
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
 import torch
 import gradio as gr
-from inference import (
+from daoti.inference import (
     load_daoti, predict, generate_response, compute_coherence, verify_sha256,
     GUA_64, BA_GONG, GUA_WUXING, GUA_TRIGRAM,
     BAGUA_NAMES, WUXING_NAMES, LIUQIN_MAP, PALACE_MAP,
@@ -30,7 +35,7 @@ METHOD_NAMES = {"周易": "traditional", "梅花易数": "meihua", "六爻": "li
 
 GUA_CHOICES = [(f"{GUA_64[i]}", i) for i in range(64)]
 
-MODEL_PATH = "yijing_v53_daoti.pt"
+MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'weights', 'yijing_v53_daoti.pt')
 VOCAB_SIZE = 8145
 SEQ_LEN = 256
 

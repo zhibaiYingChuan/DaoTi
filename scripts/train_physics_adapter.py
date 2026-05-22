@@ -28,15 +28,19 @@ Data format (JSONL, one record per line):
 import argparse
 import json
 import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
-from inference import (
+from daoti.inference import (
     load_daoti, verify_sha256, MAX_SEQ, STATE_DIM,
 )
-from _model_core import PhysicsAdapterModel
+from daoti._model_core import PhysicsAdapterModel
 
 
 def load_physics_data(data_path, input_dim, output_dim):

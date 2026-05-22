@@ -30,16 +30,21 @@ jobs:
         run: |
           pip install --dry-run -r requirements.txt 2>&1 || true
           python -c "
-          import ast, sys
+          import ast, sys, os
           ok = True
-          for fname in ['inference.py', '_model_core.py', 'spike_interface.py', 'app.py']:
-              try:
-                  with open(fname) as f:
-                      ast.parse(f.read())
-                  print(f'[OK] {fname}')
-              except SyntaxError as e:
-                  print(f'[FAIL] {fname}: {e}')
-                  ok = False
+          for root, dirs, files in os.walk('.'):
+              dirs[:] = [d for d in dirs if d.startswith('.')]
+              for f in files:
+                  if not f.endswith('.py'):
+                      continue
+                  path = os.path.join(root, f)
+                  try:
+                      with open(path) as fh:
+                          ast.parse(fh.read())
+                      print(f'[OK] {path}')
+                  except SyntaxError as e:
+                      print(f'[FAIL] {path}: {e}')
+                      ok = False
           sys.exit(0 if ok else 1)
           "
 
@@ -48,35 +53,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Check for training logic leaks
-        run: |
-          python -c "
-          import re, sys, os
-          patterns = [
-              r'nn\.CrossEntropyLoss', r'nn\.MSELoss', r'nn\.KLDivLoss',
-              r'torch\.optim\.', r'\.backward\(\)', r'\.step\(\)',
-              r'lr_scheduler', r'learning_rate\s*=',
-              r'stage1|stage2|stage3|stage4',
-              r'四阶段', r'训练配方', r'数据配方',
-          ]
-          exclude = {'train_adapter.py', 'train_physics_adapter.py', '_create_release.py'}
-          found = []
-          for root, dirs, files in os.walk('.'):
-              dirs[:] = [d for d in dirs if not d.startswith('.')]
-              for f in files:
-                  if not f.endswith('.py') or f in exclude:
-                      continue
-                  path = os.path.join(root, f)
-                  with open(path, encoding='utf-8', errors='ignore') as fh:
-                      for i, line in enumerate(fh, 1):
-                          for p in patterns:
-                              if re.search(p, line):
-                                  found.append(f'{path}:{i}: {line.strip()[:80]}')
-                                  break
-          if found:
-              print('WARNING: Potential training logic detected:')
-              for f in found:
-                  print(f'  {f}')
-              sys.exit(1)
-          else:
-              print('[OK] No training logic leaks detected')
-          "
+        run: python scripts/check_training_leak.py

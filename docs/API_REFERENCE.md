@@ -1,16 +1,16 @@
-# DaoTi V53 API Reference
+﻿# DaoTi V53 API Reference
 
 > **License** · Code: [Apache 2.0](LICENSE_CODE) · Model Weights: [DaoTi Research License v1.0](LICENSE)
 
 ## Quick Start
 
 ```python
-from inference import load_daoti, predict, generate_response, verify_sha256
+from daoti.inference import load_daoti, predict, generate_response, verify_sha256
 
-verify_sha256("yijing_v53_daoti.pt")
-model = load_daoti("yijing_v53_daoti.pt")
+verify_sha256("weights/yijing_v53_daoti.pt")
+model = load_daoti("weights/yijing_v53_daoti.pt")
 
-from inference import tokenize
+from daoti.inference import tokenize
 text_ids = tokenize("天行健，君子以自强不息", max_seq=256)
 result = predict(model, text_ids, gua_idx=0, method='traditional')
 response = generate_response(model, text_ids, gua_idx=0, method='traditional')

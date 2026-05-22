@@ -14,9 +14,14 @@ Demo: DaoTi V53 推理演示
 本脚本仅使用公开推理接口 (inference.py)，不访问任何内部模型架构。
 """
 
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
 import torch
 import torch.nn.functional as F
-from inference import (
+from daoti.inference import (
     load_daoti, predict, verify_sha256, generate_response, compute_coherence,
     GUA_64, BA_GONG, GUA_WUXING, GUA_TRIGRAM,
     BAGUA_NAMES, WUXING_NAMES, LIUQIN_MAP, PALACE_MAP,

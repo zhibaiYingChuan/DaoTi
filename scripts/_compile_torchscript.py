@@ -3,9 +3,9 @@ import torch.nn as nn
 import sys
 import os
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
-from inference import load_daoti, STATE_DIM
+from daoti.inference import load_daoti, STATE_DIM
 
 
 class DaoTiInferenceWrapper(nn.Module):
